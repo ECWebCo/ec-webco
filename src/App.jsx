@@ -1,3 +1,4 @@
+import SetupPage from './components/pages/SetupPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import LoginPage from './components/pages/LoginPage'
@@ -25,6 +26,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <LoginPage />} />
+<Route path="/setup" element={<SetupPage />} />
       <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
         <Route index element={<DashboardPage />} />
         <Route path="menu" element={<MenuPage />} />
