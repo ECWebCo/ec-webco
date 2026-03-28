@@ -8,6 +8,7 @@ import HoursPage from './components/pages/HoursPage'
 import LinksPage from './components/pages/LinksPage'
 import PhotosPage from './components/pages/PhotosPage'
 import AdminPage from './components/pages/AdminPage'
+import NotFoundPage from './components/pages/NotFoundPage'
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
@@ -32,7 +33,7 @@ export default function App() {
         <Route path="photos" element={<PhotosPage />} />
       </Route>
 <Route path="admin" element={<AdminPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
