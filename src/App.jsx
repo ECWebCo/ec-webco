@@ -31,6 +31,7 @@ export default function App() {
         <Route path="links" element={<LinksPage />} />
         <Route path="photos" element={<PhotosPage />} />
       </Route>
+<Route path="admin" element={<AdminPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
