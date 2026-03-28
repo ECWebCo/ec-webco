@@ -37,10 +37,24 @@ export default function AdminPage() {
 
       // 2. Send invite email if provided
       if (form.email) {
-        setInviting(true)
-        const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(form.email)
-        if (inviteError) console.warn('Invite error:', inviteError.message)
-      }
+  setInviting(true)
+  await fetch('/api/onboard-client', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      email: form.email,
+      restaurantName: form.name,
+      dashboardUrl: 'https://manage.ecwebco.com'
+    })
+  })
+}
+```
+
+Save, then push:
+```
+git add .
+git commit -m "add onboarding email"
+git push
 
       toast('Restaurant added!')
       setAddModal(false)
