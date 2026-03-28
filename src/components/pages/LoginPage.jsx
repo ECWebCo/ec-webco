@@ -12,7 +12,7 @@ const inputStyle = {
 function Logo() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-      <div style={{ width: 44, height: 44, background: 'var(--gold)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 16, color: '#fff', flexShrink: 0 }}>EC</div>
+      <img src="/ec-logo.png" alt="EC Web Co" style={{ height: 36, flexShrink: 0 }} />
       <div>
         <div style={{ fontSize: 15, fontWeight: 600 }}>EC Web Co</div>
         <div style={{ fontSize: 12, color: 'var(--muted)' }}>Website Manager</div>

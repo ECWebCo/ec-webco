@@ -63,7 +63,7 @@ export default function DashboardLayout() {
         {/* Logo */}
         <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, background: 'var(--gold)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>EC</div>
+            <img src="/ec-logo.png" alt="EC Web Co" style={{ height: 28, flexShrink: 0 }} />
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>EC Web Co</div>
               <div style={{ fontSize: 11, color: 'var(--muted)' }}>Website Manager</div>
