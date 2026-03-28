@@ -114,8 +114,8 @@ export default function MockupPage() {
       await supabase.from('hours').insert(hours.map(h => ({ ...h, restaurant_id: rest.id })))
 
       if (links.order_url || links.reservation_url || links.phone) {
-        await supabase.from('links').insert({ restaurant_id: rest.id, ...links })
-      }
+  await supabase.from('links').upsert({ restaurant_id: rest.id, ...links })
+}
 
       const validPhotos = photoUrls.filter(u => u.trim())
       for (let pi = 0; pi < validPhotos.length; pi++) {
