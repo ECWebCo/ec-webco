@@ -1,3 +1,4 @@
+import MockupPage from './components/pages/MockupPage'
 import SetupPage from './components/pages/SetupPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="photos" element={<PhotosPage />} />
       </Route>
 <Route path="admin" element={<AdminPage />} />
+<Route path="mockup" element={<MockupPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )

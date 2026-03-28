@@ -10,6 +10,7 @@ const NAV = [
   { to: '/links',  label: 'Links',     icon: IconLink },
   { to: '/photos', label: 'Photos',    icon: IconPhoto },
   { to: '/admin',  label: 'Admin',     icon: IconAdmin },
+{ to: '/mockup', label: 'Mockup', icon: IconMockup },
 ]
 
 export default function DashboardLayout() {
@@ -209,5 +210,11 @@ function IconPhoto({ size = 18 }) {
     <rect x="1" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
     <circle cx="6" cy="8" r="1.5" fill="currentColor"/>
     <path d="M1 13l4-4 3 3 3-3 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+  </svg>
+}
+function IconMockup({ size = 18 }) {
+  return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <rect x="1" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M5 7h8M5 11h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 }
