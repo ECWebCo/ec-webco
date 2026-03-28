@@ -5,7 +5,7 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { email, restaurantName, restaurantId } = req.body
+  const { email, restaurantName, restaurantId, stripeLink } = req.body
 
   if (!email || !restaurantName) {
     return res.status(400).json({ error: 'Missing required fields' })
@@ -37,10 +37,20 @@ module.exports = async function handler(req, res) {
         .eq('id', restaurantId)
     }
 
-    // Setup page link with email pre-filled
     const setupLink = `https://manage.ecwebco.com/setup?email=${encodeURIComponent(email)}`
 
-    // Send welcome email
+    const stripeSection = stripeLink ? `
+      <div style="background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <p style="font-size: 13px; color: #166534; margin: 0 0 12px; font-weight: 500;">Complete your setup</p>
+        <p style="font-size: 14px; color: #166534; margin: 0 0 14px; line-height: 1.6;">
+          To activate your website, please complete your payment below.
+        </p>
+        <a href="${stripeLink}" style="display: inline-block; padding: 12px 24px; background: #16A34A; color: #fff; font-size: 13px; font-weight: 500; text-decoration: none; border-radius: 6px;">
+          Complete Payment
+        </a>
+      </div>
+    ` : ''
+
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -62,14 +72,16 @@ module.exports = async function handler(req, res) {
                 Hi there! Your website manager account for <strong style="color: #1A1A1A;">${restaurantName}</strong> is ready. Click below to set up your password and get started.
               </p>
 
-              <div style="text-align: center; margin-bottom: 32px;">
+              <div style="text-align: center; margin-bottom: 24px;">
                 <a href="${setupLink}" style="display: inline-block; padding: 16px 36px; background: #B8962E; color: #fff; font-size: 14px; font-weight: 500; text-decoration: none; border-radius: 8px;">
                   Set Up My Account
                 </a>
               </div>
 
+              ${stripeSection}
+
               <p style="font-size: 13px; color: #C2BFB8; text-align: center; margin: 0;">
-                Or visit: <a href="${setupLink}" style="color: #B8962E;">${setupLink}</a>
+                Setup link: <a href="${setupLink}" style="color: #B8962E;">${setupLink}</a>
               </p>
             </div>
 
