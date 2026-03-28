@@ -6,9 +6,10 @@ export default function AdminPage() {
   const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
   const [addModal, setAddModal] = useState(false)
-  const [form, setForm] = useState({ name: '', slug: '', email: '' })
+  const [deleteModal, setDeleteModal] = useState(null)
+  const [form, setForm] = useState({ name: '', slug: '', email: '', stripeLink: '' })
   const [saving, setSaving] = useState(false)
-  const [inviting, setInviting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => { load() }, [])
 
@@ -16,7 +17,7 @@ export default function AdminPage() {
     setLoading(true)
     const { data } = await supabase
       .from('restaurants')
-      .select('*, analytics_events(count)')
+      .select('*')
       .order('created_at', { ascending: false })
     setRestaurants(data || [])
     setLoading(false)
@@ -26,31 +27,49 @@ export default function AdminPage() {
     if (!form.name || !form.slug) return
     setSaving(true)
     try {
-      // 1. Create the restaurant record (no owner yet)
       const { data: rest, error } = await supabase
         .from('restaurants')
         .insert({ name: form.name, slug: form.slug.toLowerCase().replace(/\s+/g, '-') })
         .select()
         .single()
-
       if (error) throw error
-
-      // 2. Send invite email if provided
       if (form.email) {
-        setInviting(true)
-        const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(form.email)
-        if (inviteError) console.warn('Invite error:', inviteError.message)
+        const res = await fetch('/api/onboard-client', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: form.email, restaurantName: form.name, restaurantId: rest.id, stripeLink: form.stripeLink || null })
+        })
+        if (!res.ok) throw new Error('Failed to send invite')
       }
-
       toast('Restaurant added!')
       setAddModal(false)
-      setForm({ name: '', slug: '', email: '' })
+      setForm({ name: '', slug: '', email: '', stripeLink: '' })
       load()
     } catch (err) {
       toast(err.message || 'Failed to add restaurant', 'error')
     } finally {
       setSaving(false)
-      setInviting(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteModal) return
+    setDeleting(true)
+    try {
+      await supabase.from('menu_items').delete().eq('restaurant_id', deleteModal.id)
+      await supabase.from('menu_sections').delete().eq('restaurant_id', deleteModal.id)
+      await supabase.from('hours').delete().eq('restaurant_id', deleteModal.id)
+      await supabase.from('links').delete().eq('restaurant_id', deleteModal.id)
+      await supabase.from('photos').delete().eq('restaurant_id', deleteModal.id)
+      await supabase.from('analytics_events').delete().eq('restaurant_id', deleteModal.id)
+      await supabase.from('restaurants').delete().eq('id', deleteModal.id)
+      toast('Restaurant deleted')
+      setDeleteModal(null)
+      load()
+    } catch (err) {
+      toast(err.message || 'Failed to delete', 'error')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -65,10 +84,9 @@ export default function AdminPage() {
       <PageHeader
         title="Admin"
         subtitle="Manage all restaurant clients"
-        action={<Button variant="primary" onClick={() => setAddModal(true)}>＋ Add Restaurant</Button>}
+        action={<Button variant="primary" onClick={() => setAddModal(true)}>+ Add Restaurant</Button>}
       />
 
-      {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 24 }}>
         <Card style={{ padding: '16px 18px' }}>
           <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Total Clients</div>
@@ -84,15 +102,13 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      {/* Restaurant list */}
       <Card style={{ padding: 0, overflow: 'hidden' }}>
-        {/* Header */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 180px', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           <div>Restaurant</div>
           <div>Slug</div>
           <div>Status</div>
           <div>Created</div>
-          <div></div>
+          <div>Actions</div>
         </div>
 
         {restaurants.length === 0 && (
@@ -103,13 +119,13 @@ export default function AdminPage() {
 
         {restaurants.map((r, i) => (
           <div key={r.id} style={{
-            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto',
+            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 180px',
             gap: 16, padding: '16px 20px', alignItems: 'center',
             borderBottom: i < restaurants.length - 1 ? '1px solid var(--border)' : 'none'
           }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{r.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{r.id.slice(0, 8)}…</div>
+              <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{r.id.slice(0, 8)}...</div>
             </div>
             <div>
               <code style={{ fontSize: 12, background: 'var(--bg)', padding: '3px 8px', borderRadius: 4, color: 'var(--muted)' }}>
@@ -127,65 +143,63 @@ export default function AdminPage() {
               {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <Button size="sm" variant="ghost" onClick={() => window.open(`https://manage.ecwebco.com`, '_blank')}>
-                Dashboard
-              </Button>
+              <Button size="sm" variant="ghost" onClick={() => window.open('https://ec-webco-site.vercel.app', '_blank')}>View Site</Button>
+              <Button size="sm" variant="danger" onClick={() => setDeleteModal(r)}>Delete</Button>
             </div>
           </div>
         ))}
       </Card>
 
-      {/* Add Restaurant Modal */}
       <Modal
         open={addModal}
-        onClose={() => { setAddModal(false); setForm({ name: '', slug: '', email: '' }) }}
+        onClose={() => { setAddModal(false); setForm({ name: '', slug: '', email: '', stripeLink: '' }) }}
         title="Add New Restaurant"
         footer={<>
           <Button variant="ghost" onClick={() => setAddModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleAdd} disabled={!form.name || !form.slug || saving}>
-            {saving ? (inviting ? 'Sending invite…' : 'Saving…') : 'Add Restaurant'}
+            {saving ? 'Adding...' : 'Add Restaurant'}
           </Button>
         </>}
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Field label="Restaurant name">
-            <input
-              value={form.name}
-              onChange={e => {
-                const name = e.target.value
-                setForm(f => ({ ...f, name, slug: autoSlug(name) }))
-              }}
-              placeholder="e.g. La Bella Cucina"
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = 'var(--gold)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
-            />
+            <input value={form.name} onChange={e => { const name = e.target.value; setForm(f => ({ ...f, name, slug: autoSlug(name) })) }}
+              placeholder="e.g. La Bella Cucina" style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
           </Field>
           <Field label="URL Slug">
-            <input
-              value={form.slug}
-              onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
-              placeholder="e.g. la-bella-cucina"
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = 'var(--gold)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
-            />
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>
-              Used to connect the website. Must be unique and URL-safe.
-            </div>
+            <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
+              placeholder="e.g. la-bella-cucina" style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Must be unique and URL-safe</div>
           </Field>
-          <Field label="Owner email (optional — sends login invite)">
-            <input
-              type="email"
-              value={form.email}
-              onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              placeholder="owner@restaurant.com"
-              style={inputStyle}
-              onFocus={e => e.target.style.borderColor = 'var(--gold)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
-            />
+          <Field label="Owner email (sends welcome email + setup link)">
+            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+              placeholder="owner@restaurant.com" style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+          </Field>
+          <Field label="Stripe Payment Link (optional)">
+            <input type="url" value={form.stripeLink} onChange={e => setForm(f => ({ ...f, stripeLink: e.target.value }))}
+              placeholder="https://buy.stripe.com/..." style={inputStyle}
+              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
           </Field>
         </div>
+      </Modal>
+
+      <Modal
+        open={!!deleteModal}
+        onClose={() => setDeleteModal(null)}
+        title="Delete Restaurant"
+        footer={<>
+          <Button variant="ghost" onClick={() => setDeleteModal(null)}>Cancel</Button>
+          <Button variant="danger" onClick={handleDelete} disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Yes, Delete'}
+          </Button>
+        </>}
+      >
+        <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.6 }}>
+          Are you sure you want to delete <strong style={{ color: 'var(--text)' }}>{deleteModal?.name}</strong>? This will permanently remove all their data. This cannot be undone.
+        </p>
       </Modal>
     </div>
   )
