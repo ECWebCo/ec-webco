@@ -34,7 +34,7 @@ export default function MockupPage() {
   const [saving, setSaving] = useState(false)
   const [previewUrl, setPreviewUrl] = useState('')
 
-  const [info, setInfo] = useState({ name: '', tagline: '', description: '' })
+  const [info, setInfo] = useState({ name: '', tagline: '', description: '', email: '', phone_display: '', address: '', city: 'Houston, Texas', est: '' })
   const [sections, setSections] = useState([{ name: 'Starters', items: [{ name: '', price: '', description: '' }] }])
   const [hours, setHours] = useState(DAYS.map((_, i) => ({ day_of_week: i, open_time: '11:00', close_time: '21:00', closed: i === 1 })))
   const [links, setLinks] = useState({ order_url: '', reservation_url: '', phone: '' })
@@ -88,7 +88,7 @@ export default function MockupPage() {
       const slug = slugify(info.name)
       const { data: rest, error } = await supabase
         .from('restaurants')
-        .insert({ name: info.name, slug, description: info.description, tagline: info.tagline })
+        .insert({ name: info.name, slug, description: info.description, tagline: info.tagline, email: info.email, address: info.address, city: info.city, est: info.est ? parseInt(info.est) : null })
         .select().single()
       if (error) throw error
 
@@ -114,8 +114,8 @@ export default function MockupPage() {
       await supabase.from('hours').insert(hours.map(h => ({ ...h, restaurant_id: rest.id })))
 
       if (links.order_url || links.reservation_url || links.phone) {
-  await supabase.from('links').upsert({ restaurant_id: rest.id, ...links })
-}
+        await supabase.from('links').insert({ restaurant_id: rest.id, ...links })
+      }
 
       const validPhotos = photoUrls.filter(u => u.trim())
       for (let pi = 0; pi < validPhotos.length; pi++) {
@@ -165,6 +165,28 @@ export default function MockupPage() {
               <textarea value={info.description} onChange={e => setInfo(f => ({ ...f, description: e.target.value }))}
                 placeholder="e.g. Handmade pasta and wood-fired meats in the heart of Houston..."
                 style={{ ...inputStyle, height: 80, resize: 'vertical', lineHeight: 1.5 }}
+                onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+            </Field>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <Field label="Email">
+                <input type="email" value={info.email} onChange={e => setInfo(f => ({ ...f, email: e.target.value }))}
+                  placeholder="hello@restaurant.com" style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+              </Field>
+              <Field label="Year Established (optional)">
+                <input type="number" value={info.est} onChange={e => setInfo(f => ({ ...f, est: e.target.value }))}
+                  placeholder="e.g. 2018" style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+              </Field>
+            </div>
+            <Field label="Address">
+              <input value={info.address} onChange={e => setInfo(f => ({ ...f, address: e.target.value }))}
+                placeholder="e.g. 1234 Main St, Houston TX 77006" style={inputStyle}
+                onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+            </Field>
+            <Field label="City">
+              <input value={info.city} onChange={e => setInfo(f => ({ ...f, city: e.target.value }))}
+                placeholder="e.g. Houston, Texas" style={inputStyle}
                 onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
             </Field>
           </div>
