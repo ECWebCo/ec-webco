@@ -7,6 +7,7 @@ import MenuPage from './components/pages/MenuPage'
 import HoursPage from './components/pages/HoursPage'
 import LinksPage from './components/pages/LinksPage'
 import PhotosPage from './components/pages/PhotosPage'
+import AdminPage from './components/pages/AdminPage'
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()

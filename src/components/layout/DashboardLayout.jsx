@@ -9,6 +9,7 @@ const NAV = [
   { to: '/hours',  label: 'Hours',     icon: IconClock },
   { to: '/links',  label: 'Links',     icon: IconLink },
   { to: '/photos', label: 'Photos',    icon: IconPhoto },
+  { to: '/admin',  label: 'Admin',     icon: IconAdmin },
 ]
 
 export default function DashboardLayout() {
@@ -195,6 +196,12 @@ function IconClock({ size = 18 }) {
 function IconLink({ size = 18 }) {
   return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
     <path d="M7 11l4-4M10 7h3V4M8 4H5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+}
+function IconAdmin({ size = 18 }) {
+  return <svg width={size} height={size} viewBox='0 0 18 18' fill='none'>
+    <circle cx='9' cy='6' r='3' stroke='currentColor' strokeWidth='1.5'/>
+    <path d='M2 16c0-3.3 3.1-6 7-6s7 2.7 7 6' stroke='currentColor' strokeWidth='1.5' strokeLinecap='round'/>
   </svg>
 }
 function IconPhoto({ size = 18 }) {
