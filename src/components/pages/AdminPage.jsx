@@ -128,8 +128,8 @@ export default function AdminPage() {
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <Button size="sm" variant="ghost" onClick={() => window.open(`https://manage.ecwebco.com`, '_blank')}>
-                Dashboard
-              </Button>
+               <Button size="sm" variant="ghost" onClick={() => window.open('https://ec-webco-site.vercel.app', '_blank')}>View Site</Button>
+<Button size="sm" variant="danger" onClick={() => setDeleteModal(r)}>Delete</Button>
             </div>
           </div>
         ))}
