@@ -64,11 +64,14 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const hash = window.location.hash
-    if (hash.includes('type=recovery') || hash.includes('type=invite') || hash.includes('type=signup')) {
-      setView('reset')
-    }
-  }, [])
+  const hash = window.location.hash
+  const params = new URLSearchParams(hash.replace('#', '?'))
+  const type = params.get('type')
+  const token = params.get('access_token')
+  if (type === 'invite' || type === 'recovery' || type === 'signup' || token) {
+    setView('reset')
+  }
+}, [])
 
   async function handleSignIn(e) {
     e.preventDefault()
