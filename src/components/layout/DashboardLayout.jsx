@@ -12,22 +12,39 @@ const NAV = [
 ]
 
 export default function DashboardLayout() {
-  const { restaurant, signOut } = useAuth()
+  const { restaurant, session, signOut } = useAuth()
   const navigate = useNavigate()
   const [requestOpen, setRequestOpen] = useState(false)
   const [requestText, setRequestText] = useState('')
   const [requestSent, setRequestSent] = useState(false)
+  const [requestSending, setRequestSending] = useState(false)
 
   function handleSignOut() {
     signOut()
     navigate('/login')
   }
 
-  function handleSendRequest() {
-    // In production: insert into a `change_requests` table in Supabase
-    // or send via email with a serverless function
-    setRequestSent(true)
-    setTimeout(() => { setRequestOpen(false); setRequestSent(false); setRequestText('') }, 1800)
+  async function handleSendRequest() {
+    if (!requestText.trim()) return
+    setRequestSending(true)
+    try {
+      const res = await fetch('/api/request-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: requestText,
+          email: session?.user?.email,
+          restaurantName: restaurant?.name
+        })
+      })
+      if (!res.ok) throw new Error('Failed')
+      setRequestSent(true)
+      setTimeout(() => { setRequestOpen(false); setRequestSent(false); setRequestText('') }, 2000)
+    } catch (err) {
+      alert('Failed to send. Please email us at hello@ecwebco.com')
+    } finally {
+      setRequestSending(false)
+    }
   }
 
   const initials = restaurant?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'R'
