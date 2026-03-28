@@ -14,7 +14,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: [{
           role: 'user',
           content: `Parse this restaurant menu text into structured JSON. Return ONLY valid JSON, no explanation, no markdown.
@@ -41,6 +41,8 @@ Rules:
 - If no description, use ""
 - Group items into logical sections
 - If no sections are clear, put everything in one section called "Menu"
+- Keep descriptions to 10 words max or leave empty
+- Skip duplicate items
 
 Menu text to parse:
 ${menuText}`
