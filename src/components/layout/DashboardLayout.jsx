@@ -42,7 +42,7 @@ export default function DashboardLayout() {
       setRequestSent(true)
       setTimeout(() => { setRequestOpen(false); setRequestSent(false); setRequestText('') }, 2000)
     } catch (err) {
-      alert('Failed to send. Please email us at hello@ecwebco.com')
+      alert('Failed to send. Please email us at evan@ecwebco.com')
     } finally {
       setRequestSending(false)
     }

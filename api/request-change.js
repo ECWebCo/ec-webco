@@ -70,7 +70,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         from: 'EC Web Co <onboarding@resend.dev>',
-        to: 'hello@ecwebco.com',
+        to: 'evan@ecwebco.com',
         reply_to: email,
         subject: `Change Request — ${restaurantName || 'Restaurant'}`,
         html: `
