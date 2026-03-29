@@ -53,6 +53,12 @@ export default function MockupPage() {
   const [hours, setHours] = useState(DAYS.map((_, i) => ({ day_of_week: i, open_time: '11:00', close_time: '21:00', closed: i === 1 })))
   const [links, setLinks] = useState({ order_url: '', reservation_url: '', phone: '' })
   const [photoUrls, setPhotoUrls] = useState(['', '', ''])
+  const [locationCount, setLocationCount] = useState(1)
+  const [locations, setLocations] = useState([
+    { name: '', address: '', city: 'Houston, Texas', phone: '', open_time: '11:00', close_time: '21:00' },
+    { name: '', address: '', city: 'Houston, Texas', phone: '', open_time: '11:00', close_time: '21:00' },
+    { name: '', address: '', city: 'Houston, Texas', phone: '', open_time: '11:00', close_time: '21:00' },
+  ])
 
   async function parseMenu() {
     if (!menuText.trim()) return
@@ -161,6 +167,19 @@ export default function MockupPage() {
             <Field label="City">
               <input value={info.city} onChange={e => setInfo(f => ({ ...f, city: e.target.value }))} placeholder="e.g. Houston, Texas" style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
             </Field>
+            <Field label="Number of locations">
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[1,2,3].map(n => (
+                  <button key={n} type="button" onClick={() => setLocationCount(n)} style={{
+                    padding: '8px 20px', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 500,
+                    cursor: 'pointer', fontFamily: 'inherit', transition: '0.15s', border: 'none',
+                    background: locationCount === n ? 'var(--gold)' : 'var(--bg)',
+                    color: locationCount === n ? '#fff' : 'var(--muted)',
+                    outline: locationCount === n ? 'none' : '1px solid var(--border)'
+                  }}>{n}</button>
+                ))}
+              </div>
+            </Field>
             <Field label="Logo URL (optional — paste a URL to their logo image)">
               <input value={info.logo_url} onChange={e => setInfo(f => ({ ...f, logo_url: e.target.value }))} placeholder="https://..." style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
               {info.logo_url && <img src={info.logo_url} alt="logo preview" style={{ height: 40, marginTop: 8, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />}
@@ -254,6 +273,88 @@ export default function MockupPage() {
             <Button variant="primary" onClick={() => setStep(3)}>Next: Links & Media</Button>
           </div>
         </Card>
+      )}
+
+      {/* STEP 2.5 — Locations (only if multiple) */}
+      {step === 25 && (
+        <div>
+          {Array.from({length: locationCount}).map((_, li) => (
+            <Card key={li} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 16, color: 'var(--text)' }}>Location {li + 1}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <Field label='Location name (optional)'>
+                  <input value={locations[li].name} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, name: e.target.value} : loc))}
+                    placeholder={} style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+                </Field>
+                <Field label='Address'>
+                  <input value={locations[li].address} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, address: e.target.value} : loc))}
+                    placeholder='e.g. 1234 Westheimer Rd, Houston TX 77006' style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+                </Field>
+                <Field label='Phone number'>
+                  <input type='tel' value={locations[li].phone} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, phone: e.target.value} : loc))}
+                    placeholder='(713) 555-0100' style={{...inputStyle, width: 200}}
+                    onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+                </Field>
+                <Field label='Hours'>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type='time' value={locations[li].open_time} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, open_time: e.target.value} : loc))} style={{padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)', width: 110}} />
+                    <span style={{fontSize: 12, color: 'var(--muted)'}}>to</span>
+                    <input type='time' value={locations[li].close_time} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, close_time: e.target.value} : loc))} style={{padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)', width: 110}} />
+                  </div>
+                </Field>
+              </div>
+            </Card>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Button variant='ghost' onClick={() => setStep(2)}>Back</Button>
+            <Button variant='primary' onClick={() => setStep(3)}>Next: Links & Media</Button>
+          </div>
+        </div>
+      )}
+
+      {/* STEP 2.5 — Locations */}
+      {step === 25 && (
+        <div>
+          {Array.from({length: locationCount}).map((_, li) => (
+            <Card key={li} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 16 }}>Location {li + 1}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <Field label="Location name (optional)">
+                  <input value={locations[li].name} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, name: e.target.value} : loc))}
+                    placeholder={`e.g. ${info.name} — Montrose`} style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+                </Field>
+                <Field label="Address">
+                  <input value={locations[li].address} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, address: e.target.value} : loc))}
+                    placeholder="e.g. 1234 Westheimer Rd, Houston TX 77006" style={inputStyle}
+                    onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+                </Field>
+                <Field label="Phone number">
+                  <input type="tel" value={locations[li].phone} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, phone: e.target.value} : loc))}
+                    placeholder="(713) 555-0100" style={{...inputStyle, width: 200}}
+                    onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+                </Field>
+                <Field label="Hours">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="time" value={locations[li].open_time}
+                      onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, open_time: e.target.value} : loc))}
+                      style={{ padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)', width: 110 }} />
+                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>to</span>
+                    <input type="time" value={locations[li].close_time}
+                      onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, close_time: e.target.value} : loc))}
+                      style={{ padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)', width: 110 }} />
+                  </div>
+                </Field>
+              </div>
+            </Card>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <Button variant="ghost" onClick={() => setStep(2)}>Back</Button>
+            <Button variant="primary" onClick={() => setStep(3)}>Next: Links & Media</Button>
+          </div>
+        </div>
       )}
 
       {/* STEP 3 — Links & Media */}
