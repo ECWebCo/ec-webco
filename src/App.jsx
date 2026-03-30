@@ -9,6 +9,9 @@ import LinksPage from './components/pages/LinksPage'
 import PhotosPage from './components/pages/PhotosPage'
 import AdminPage from './components/pages/AdminPage'
 import SettingsPage from './components/pages/SettingsPage'
+import MockupPage from './components/pages/MockupPage'
+import SetupPage from './components/pages/SetupPage'
+import NotFoundPage from './components/pages/NotFoundPage'
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
@@ -32,7 +35,11 @@ export default function App() {
         <Route path="links" element={<LinksPage />} />
         <Route path="photos" element={<PhotosPage />} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage />} />
+<Route path="admin" element={<AdminPage />} />
+<Route path="mockup" element={<MockupPage />} />
+<Route path="settings" element={<SettingsPage />} />
+<Route path="/setup" element={<SetupPage />} />
     </Routes>
   )
 }
