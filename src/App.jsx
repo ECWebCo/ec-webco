@@ -1,5 +1,3 @@
-import MockupPage from './components/pages/MockupPage'
-import SetupPage from './components/pages/SetupPage'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import LoginPage from './components/pages/LoginPage'
@@ -10,7 +8,7 @@ import HoursPage from './components/pages/HoursPage'
 import LinksPage from './components/pages/LinksPage'
 import PhotosPage from './components/pages/PhotosPage'
 import AdminPage from './components/pages/AdminPage'
-import NotFoundPage from './components/pages/NotFoundPage'
+import SettingsPage from './components/pages/SettingsPage'
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
@@ -27,7 +25,6 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <LoginPage />} />
-<Route path="/setup" element={<SetupPage />} />
       <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
         <Route index element={<DashboardPage />} />
         <Route path="menu" element={<MenuPage />} />
@@ -35,9 +32,7 @@ export default function App() {
         <Route path="links" element={<LinksPage />} />
         <Route path="photos" element={<PhotosPage />} />
       </Route>
-<Route path="admin" element={<AdminPage />} />
-<Route path="mockup" element={<MockupPage />} />
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
