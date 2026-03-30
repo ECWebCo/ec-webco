@@ -10,11 +10,10 @@ const NAV = [
   { to: '/links',  label: 'Links',     icon: IconLink },
   { to: '/photos', label: 'Photos',    icon: IconPhoto },
   { to: '/admin',  label: 'Admin',     icon: IconAdmin },
-{ to: '/mockup', label: 'Mockup', icon: IconMockup },
 ]
 
 export default function DashboardLayout() {
-  const { restaurant, session, signOut } = useAuth()
+  const { restaurant, ownRestaurant, managedId, manageRestaurant, session, signOut } = useAuth()
   const navigate = useNavigate()
   const [requestOpen, setRequestOpen] = useState(false)
   const [requestText, setRequestText] = useState('')
@@ -43,7 +42,7 @@ export default function DashboardLayout() {
       setRequestSent(true)
       setTimeout(() => { setRequestOpen(false); setRequestSent(false); setRequestText('') }, 2000)
     } catch (err) {
-      alert('Failed to send. Please email us at evan@ecwebco.com')
+      alert('Failed to send. Please email us at hello@ecwebco.com')
     } finally {
       setRequestSending(false)
     }
@@ -54,9 +53,19 @@ export default function DashboardLayout() {
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
 
+      {/* ── Managing Banner ── */}
+      {managedId && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 999, background: '#1A3A2A', color: '#fff', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 13 }}>
+          <span>Managing: <strong>{restaurant?.name}</strong> — changes affect their live site</span>
+          <button onClick={() => { manageRestaurant(null); window.location.href = '/admin' }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', padding: '5px 14px', borderRadius: 6, cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>
+            Exit → Back to Admin
+          </button>
+        </div>
+      )}
+
       {/* ── Sidebar (desktop) ── */}
       <aside style={{
-        width: 'var(--sidebar-w)', flexShrink: 0,
+        width: 'var(--sidebar-w)', flexShrink: 0, marginTop: managedId ? 44 : 0,
         background: 'var(--surface)', borderRight: '1px solid var(--border)',
         display: 'flex', flexDirection: 'column',
         '@media(max-width:680px)': { display: 'none' }
@@ -64,7 +73,7 @@ export default function DashboardLayout() {
         {/* Logo */}
         <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid var(--border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/ec-logo.png" alt="EC Web Co" style={{ height: 28, flexShrink: 0 }} />
+            <div style={{ width: 36, height: 36, background: 'var(--gold)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0 }}>EC</div>
             <div>
               <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>EC Web Co</div>
               <div style={{ fontSize: 11, color: 'var(--muted)' }}>Website Manager</div>
@@ -210,11 +219,5 @@ function IconPhoto({ size = 18 }) {
     <rect x="1" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
     <circle cx="6" cy="8" r="1.5" fill="currentColor"/>
     <path d="M1 13l4-4 3 3 3-3 4 4" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-  </svg>
-}
-function IconMockup({ size = 18 }) {
-  return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
-    <rect x="1" y="3" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M5 7h8M5 11h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 }

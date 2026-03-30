@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import { PageHeader, Button, Card, Modal, Field, inputStyle, toast, Spinner } from '../ui'
 
 export default function AdminPage() {
+  const { manageRestaurant } = useAuth()
+  const navigate = useNavigate()
   const [restaurants, setRestaurants] = useState([])
   const [loading, setLoading] = useState(true)
   const [addModal, setAddModal] = useState(false)
@@ -71,6 +75,11 @@ export default function AdminPage() {
     } finally {
       setDeleting(false)
     }
+  }
+
+  async function handleManage(r) {
+    await manageRestaurant(r.id)
+    navigate('/')
   }
 
   function autoSlug(name) {
@@ -144,6 +153,7 @@ export default function AdminPage() {
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
               <Button size="sm" variant="ghost" onClick={() => window.open('https://ec-webco-site.vercel.app', '_blank')}>View Site</Button>
+              <Button size="sm" variant="success" onClick={() => handleManage(r)}>Manage</Button>
               <Button size="sm" variant="danger" onClick={() => setDeleteModal(r)}>Delete</Button>
             </div>
           </div>
@@ -204,3 +214,4 @@ export default function AdminPage() {
     </div>
   )
 }
+

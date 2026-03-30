@@ -22,6 +22,8 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
+  const [managedId, setManagedId] = useState(() => sessionStorage.getItem('managed_restaurant_id'))
+
   async function fetchRestaurant(userId) {
     const { data } = await supabase
       .from('restaurants')
@@ -30,6 +32,27 @@ export function AuthProvider({ children }) {
       .single()
     setRestaurant(data)
   }
+
+  async function manageRestaurant(id) {
+    if (!id) {
+      sessionStorage.removeItem('managed_restaurant_id')
+      setManagedId(null)
+      return
+    }
+    sessionStorage.setItem('managed_restaurant_id', id)
+    setManagedId(id)
+  }
+
+  // If managing a specific restaurant, fetch that one instead
+  const [managedRestaurant, setManagedRestaurant] = useState(null)
+  useEffect(() => {
+    if (managedId) {
+      supabase.from('restaurants').select('*').eq('id', managedId).single()
+        .then(({ data }) => setManagedRestaurant(data))
+    } else {
+      setManagedRestaurant(null)
+    }
+  }, [managedId])
 
   async function signIn(email, password) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
@@ -41,7 +64,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ session, restaurant, signIn, signOut, loading: session === undefined }}>
+    <AuthContext.Provider value={{ session, restaurant: managedRestaurant || restaurant, ownRestaurant: restaurant, managedId, manageRestaurant, signIn, signOut, loading: session === undefined }}>
       {children}
     </AuthContext.Provider>
   )
