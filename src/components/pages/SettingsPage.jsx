@@ -66,6 +66,16 @@ export default function SettingsPage() {
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  async function handleLogoUpload(file) {
+    if (!file) return
+    const path = `${restaurant.id}/logo-${Date.now()}.${file.name.split('.').pop()}`
+    const { error: uploadErr } = await supabase.storage.from('restaurant-photos').upload(path, file, { upsert: true })
+    if (uploadErr) { toast('Failed to upload logo', 'error'); return }
+    const { data: urlData } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
+    set('logo_url', urlData.publicUrl)
+    toast('Logo uploaded!')
+  }
+
   if (loading) return <div style={{ padding: 28 }}><Spinner /></div>
 
   return (
@@ -119,23 +129,37 @@ export default function SettingsPage() {
       {/* Logo */}
       <Card style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 18, color: 'var(--text)' }}>Logo</div>
-        <Field label="Logo URL">
-          <input value={form.logo_url} onChange={e => set('logo_url', e.target.value)}
-            placeholder="Paste a URL to your logo image (PNG with transparent background works best)"
-            style={inputStyle}
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-        </Field>
-        {form.logo_url && (
-          <div style={{ marginTop: 14, padding: 16, background: 'var(--bg)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: 16 }}>
-            <img src={form.logo_url} alt="Logo preview" style={{ height: 48, objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
-            <div style={{ fontSize: 12, color: 'var(--muted)' }}>Logo preview — shown in your website nav and footer</div>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          {form.logo_url ? (
+            <div style={{ width: 80, height: 80, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+              <img src={form.logo_url} alt="Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} onError={e => e.target.style.display = 'none'} />
+            </div>
+          ) : (
+            <div style={{ width: 80, height: 80, background: 'var(--bg)', border: '2px dashed var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 24, color: 'var(--subtle)' }}>
+              🏷
+            </div>
+          )}
+          <div style={{ flex: 1 }}>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ display: 'inline-block', padding: '9px 18px', background: 'var(--gold)', color: '#fff', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                {form.logo_url ? 'Change Logo' : 'Upload Logo'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleLogoUpload(e.target.files[0])} />
+              </label>
+              {form.logo_url && (
+                <button onClick={() => set('logo_url', '')} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>Remove</button>
+              )}
+            </div>
+            <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
+              PNG with transparent background works best. Shown in your website header and footer.
+            </p>
+            {form.logo_url && (
+              <Field label="Or paste URL directly" style={{ marginTop: 10 }}>
+                <input value={form.logo_url} onChange={e => set('logo_url', e.target.value)} style={{ ...inputStyle, fontSize: 12 }}
+                  onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+              </Field>
+            )}
           </div>
-        )}
-        {!form.logo_url && (
-          <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
-            No logo set — your restaurant name will display as text. Upload your logo image somewhere (like Google Drive, Dropbox, or Imgur) and paste the direct image URL here.
-          </p>
-        )}
+        </div>
       </Card>
 
       {/* Color Palette */}
