@@ -175,6 +175,7 @@ export default function AdminPage() {
             </div>
             <div style={{ display: 'flex', gap: 5 }}>
               <Button size="sm" variant="ghost" onClick={() => window.open(r.site_url || `https://preview.ecwebco.com/${r.slug}`, '_blank')}>View Site</Button>
+Button size="sm" variant="ghost" onClick={() => handleResendEmail(r)}>Resend Email</Button>
               <Button size="sm" variant="success" onClick={() => handleManage(r)}>Manage</Button>
               <Button size="sm" variant="danger" onClick={() => setDeleteModal(r)}>Delete</Button>
             </div>
