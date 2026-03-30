@@ -9,7 +9,6 @@ const NAV = [
   { to: '/hours',  label: 'Hours',     icon: IconClock },
   { to: '/links',  label: 'Links',     icon: IconLink },
   { to: '/photos', label: 'Photos',    icon: IconPhoto },
-  { to: '/admin',  label: 'Admin',     icon: IconAdmin },
   { to: '/settings', label: 'Settings', icon: IconSettings },
 ]
 
