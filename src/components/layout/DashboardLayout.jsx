@@ -4,13 +4,13 @@ import { useAuth } from '../../hooks/useAuth'
 import { ToastContainer, Modal, Button, Field, inputStyle } from '../ui'
 
 const NAV = [
-  { to: '/',       label: 'Dashboard', icon: IconDashboard,  end: true },
-  { to: '/menu',   label: 'Menu',      icon: IconMenu },
-  { to: '/hours',  label: 'Hours',     icon: IconClock },
-  { to: '/links',  label: 'Links',     icon: IconLink },
-  { to: '/photos', label: 'Photos',    icon: IconPhoto },
-  { to: '/admin',  label: 'Admin',     icon: IconAdmin },
-  { to: '/settings', label: 'Settings', icon: IconSettings },
+  { to: '/',          label: 'Dashboard', icon: IconDashboard, end: true },
+  { to: '/menu',      label: 'Menu',      icon: IconMenu },
+  { to: '/hours',     label: 'Hours',     icon: IconClock },
+  { to: '/links',     label: 'Links',     icon: IconLink },
+  { to: '/photos',    label: 'Photos',    icon: IconPhoto },
+  { to: '/locations', label: 'Locations', icon: IconLocation },
+  { to: '/settings',  label: 'Settings',  icon: IconSettings },
 ]
 
 export default function DashboardLayout() {
