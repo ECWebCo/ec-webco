@@ -34,7 +34,6 @@ export default function App() {
         <Route path="hours" element={<HoursPage />} />
         <Route path="links" element={<LinksPage />} />
         <Route path="photos" element={<PhotosPage />} />
-      </Route>
       <Route path="*" element={<NotFoundPage />} />
 <Route path="admin" element={<AdminPage />} />
 <Route path="mockup" element={<MockupPage />} />
