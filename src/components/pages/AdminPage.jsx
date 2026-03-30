@@ -11,18 +11,21 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true)
   const [addModal, setAddModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(null)
+  const [openDropdown, setOpenDropdown] = useState(null)
   const [form, setForm] = useState({ name: '', slug: '', email: '', stripeLink: '' })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    const handleClick = () => setOpenDropdown(null)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [])
 
   async function load() {
     setLoading(true)
-    const { data } = await supabase
-      .from('restaurants')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('restaurants').select('*').order('created_at', { ascending: false })
     setRestaurants(data || [])
     setLoading(false)
   }
@@ -34,8 +37,7 @@ export default function AdminPage() {
       const { data: rest, error } = await supabase
         .from('restaurants')
         .insert({ name: form.name, slug: form.slug.toLowerCase().replace(/\s+/g, '-') })
-        .select()
-        .single()
+        .select().single()
       if (error) throw error
       if (form.email) {
         await fetch('/api/onboard-client', {
@@ -73,20 +75,20 @@ export default function AdminPage() {
     } catch (err) {
       toast(err.message || 'Failed to delete', 'error')
     } finally {
-      setDeleting(false)
-    }
+      setDeleting(false) }
+  }
+
+  async function handleManage(r) {
+    if (manageRestaurant) await manageRestaurant(r.id)
+    navigate('/')
   }
 
   async function handleResendEmail(r) {
-    if (!r.owner_id) {
-      toast('No owner email on file — add their email first', 'error')
-      return
-    }
     try {
-      // Get the user email from auth
-      const { data: userData } = await supabase.auth.admin.getUserById(r.owner_id)
-      const email = userData?.user?.email
-      if (!email) { toast('Could not find owner email', 'error'); return }
+      const { data: { users } } = await supabase.auth.admin.listUsers()
+      const user = users?.find(u => u.id === r.owner_id)
+      const email = user?.email
+      if (!email) { toast('No email found for this restaurant', 'error'); return }
       const res = await fetch('/api/onboard-client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,11 +99,6 @@ export default function AdminPage() {
     } catch (err) {
       toast(err.message || 'Failed to resend email', 'error')
     }
-  }
-
-  async function handleManage(r) {
-    if (manageRestaurant) await manageRestaurant(r.id)
-    navigate('/')
   }
 
   function autoSlug(name) {
@@ -133,8 +130,8 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 300px', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+      <Card style={{ padding: 0, overflow: 'visible' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderRadius: 'var(--radius) var(--radius) 0 0' }}>
           <div>Restaurant</div>
           <div>Slug</div>
           <div>Status</div>
@@ -150,7 +147,7 @@ export default function AdminPage() {
 
         {restaurants.map((r, i) => (
           <div key={r.id} style={{
-            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 300px',
+            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto',
             gap: 16, padding: '16px 20px', alignItems: 'center',
             borderBottom: i < restaurants.length - 1 ? '1px solid var(--border)' : 'none'
           }}>
@@ -164,26 +161,45 @@ export default function AdminPage() {
               </code>
             </div>
             <div>
-              {r.owner_id ? (
-                <span style={{ fontSize: 11, padding: '3px 10px', background: 'var(--success-bg)', color: 'var(--success)', borderRadius: 20, fontWeight: 500 }}>● Active</span>
-              ) : (
-                <span style={{ fontSize: 11, padding: '3px 10px', background: 'var(--warning-bg)', color: 'var(--warning)', borderRadius: 20, fontWeight: 500 }}>○ Pending</span>
-              )}
+              {r.owner_id
+                ? <span style={{ fontSize: 11, padding: '3px 10px', background: 'var(--success-bg)', color: 'var(--success)', borderRadius: 20, fontWeight: 500 }}>● Active</span>
+                : <span style={{ fontSize: 11, padding: '3px 10px', background: 'var(--warning-bg)', color: 'var(--warning)', borderRadius: 20, fontWeight: 500 }}>○ Pending</span>
+              }
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>
               {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
-            <div style={{ display: 'flex', gap: 5 }}>
-              <Button size="sm" variant="ghost" onClick={() => window.open(r.site_url || `https://preview.ecwebco.com/${r.slug}`, '_blank')}>View Site</Button>
-Button size="sm" variant="ghost" onClick={() => handleResendEmail(r)}>Resend Email</Button>
-              <Button size="sm" variant="success" onClick={() => handleManage(r)}>Manage</Button>
-              <Button size="sm" variant="danger" onClick={() => setDeleteModal(r)}>Delete</Button>
+            <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+              <Button size="sm" variant="ghost" onClick={() => setOpenDropdown(openDropdown === r.id ? null : r.id)}>
+                Actions ▾
+              </Button>
+              {openDropdown === r.id && (
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', zIndex: 100, minWidth: 160, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                  {[
+                    { label: 'View Site', action: () => window.open(`https://preview.ecwebco.com/${r.slug}`, '_blank') },
+                    { label: 'Resend Email', action: () => handleResendEmail(r) },
+                    { label: 'Manage', action: () => handleManage(r) },
+                    { label: 'Delete', action: () => setDeleteModal(r), danger: true },
+                  ].map((item, idx) => (
+                    <button key={idx} onClick={() => { item.action(); setOpenDropdown(null) }} style={{
+                      display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
+                      background: 'none', border: 'none', borderBottom: idx < 3 ? '1px solid var(--border)' : 'none',
+                      fontSize: 13, fontFamily: 'inherit', cursor: 'pointer',
+                      color: item.danger ? 'var(--danger)' : 'var(--text)'
+                    }}
+                      onMouseOver={e => e.currentTarget.style.background = 'var(--bg)'}
+                      onMouseOut={e => e.currentTarget.style.background = 'none'}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}
       </Card>
 
-      {/* Add Modal */}
       <Modal
         open={addModal}
         onClose={() => { setAddModal(false); setForm({ name: '', slug: '', email: '', stripeLink: '' }) }}
@@ -220,7 +236,6 @@ Button size="sm" variant="ghost" onClick={() => handleResendEmail(r)}>Resend Ema
         </div>
       </Modal>
 
-      {/* Delete Modal */}
       <Modal
         open={!!deleteModal}
         onClose={() => setDeleteModal(null)}
@@ -239,4 +254,3 @@ Button size="sm" variant="ghost" onClick={() => handleResendEmail(r)}>Resend Ema
     </div>
   )
 }
-
