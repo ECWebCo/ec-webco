@@ -284,7 +284,7 @@ export default function MockupPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <Field label='Location name (optional)'>
                   <input value={locations[li].name} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, name: e.target.value} : loc))}
-                    placeholder={} style={inputStyle}
+                    placeholder="e.g. Location name" style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
                 </Field>
                 <Field label='Address'>
