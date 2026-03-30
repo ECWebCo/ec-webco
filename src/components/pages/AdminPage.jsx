@@ -38,12 +38,11 @@ export default function AdminPage() {
         .single()
       if (error) throw error
       if (form.email) {
-        const res = await fetch('/api/onboard-client', {
+        await fetch('/api/onboard-client', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: form.email, restaurantName: form.name, restaurantId: rest.id, stripeLink: form.stripeLink || null })
         })
-        if (!res.ok) throw new Error('Failed to send invite')
       }
       toast('Restaurant added!')
       setAddModal(false)
@@ -66,7 +65,8 @@ export default function AdminPage() {
       await supabase.from('links').delete().eq('restaurant_id', deleteModal.id)
       await supabase.from('photos').delete().eq('restaurant_id', deleteModal.id)
       await supabase.from('analytics_events').delete().eq('restaurant_id', deleteModal.id)
-      await supabase.from('restaurants').delete().eq('id', deleteModal.id)
+      const { error } = await supabase.from('restaurants').delete().eq('id', deleteModal.id)
+      if (error) throw error
       toast('Restaurant deleted')
       setDeleteModal(null)
       load()
@@ -78,7 +78,7 @@ export default function AdminPage() {
   }
 
   async function handleManage(r) {
-    await manageRestaurant(r.id)
+    if (manageRestaurant) await manageRestaurant(r.id)
     navigate('/')
   }
 
@@ -112,7 +112,7 @@ export default function AdminPage() {
       </div>
 
       <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 180px', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 220px', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           <div>Restaurant</div>
           <div>Slug</div>
           <div>Status</div>
@@ -128,7 +128,7 @@ export default function AdminPage() {
 
         {restaurants.map((r, i) => (
           <div key={r.id} style={{
-            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 180px',
+            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 220px',
             gap: 16, padding: '16px 20px', alignItems: 'center',
             borderBottom: i < restaurants.length - 1 ? '1px solid var(--border)' : 'none'
           }}>
@@ -151,8 +151,8 @@ export default function AdminPage() {
             <div style={{ fontSize: 12, color: 'var(--muted)' }}>
               {new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <Button size="sm" variant="ghost" onClick={() => window.open('https://ec-webco-site.vercel.app', '_blank')}>View Site</Button>
+            <div style={{ display: 'flex', gap: 5 }}>
+              <Button size="sm" variant="ghost" onClick={() => window.open(r.site_url || `https://preview.ecwebco.com/${r.slug}`, '_blank')}>View Site</Button>
               <Button size="sm" variant="success" onClick={() => handleManage(r)}>Manage</Button>
               <Button size="sm" variant="danger" onClick={() => setDeleteModal(r)}>Delete</Button>
             </div>
@@ -160,6 +160,7 @@ export default function AdminPage() {
         ))}
       </Card>
 
+      {/* Add Modal */}
       <Modal
         open={addModal}
         onClose={() => { setAddModal(false); setForm({ name: '', slug: '', email: '', stripeLink: '' }) }}
@@ -196,6 +197,7 @@ export default function AdminPage() {
         </div>
       </Modal>
 
+      {/* Delete Modal */}
       <Modal
         open={!!deleteModal}
         onClose={() => setDeleteModal(null)}
@@ -214,4 +216,3 @@ export default function AdminPage() {
     </div>
   )
 }
-

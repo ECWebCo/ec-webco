@@ -100,7 +100,14 @@ export default function DashboardLayout() {
 
         {/* Footer */}
         <div style={{ padding: '14px 10px', borderTop: '1px solid var(--border)' }}>
-          <button onClick={() => setRequestOpen(true)} style={{
+          {restaurant?.site_url || restaurant?.slug ? (
+        <a href={restaurant.site_url || `https://preview.ecwebco.com/${restaurant.slug}`}
+          target="_blank" rel="noreferrer"
+          style={{ display: 'block', width: '100%', padding: '9px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--muted)', fontSize: 13, fontWeight: 500, marginBottom: 8, textAlign: 'left', textDecoration: 'none' }}>
+          ↗ View My Website
+        </a>
+      ) : null}
+      <button onClick={() => setRequestOpen(true)} style={{
             width: '100%', padding: '9px 12px', background: 'var(--gold-light)',
             border: '1px solid #E8D49A', borderRadius: 'var(--radius-sm)',
             color: 'var(--gold-dark)', fontSize: 13, fontWeight: 500,
