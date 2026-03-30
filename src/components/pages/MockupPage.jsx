@@ -113,6 +113,28 @@ export default function MockupPage() {
 
       await supabase.from('hours').insert(hours.map(h => ({ ...h, restaurant_id: rest.id })))
 
+      // Save locations to new locations table
+      if (locationCount > 1) {
+        for (let li = 0; li < locationCount; li++) {
+          const loc = locations[li]
+          const { data: locData } = await supabase.from('locations')
+            .insert({ restaurant_id: rest.id, name: loc.name || `Location ${li + 1}`, address: loc.address, sort_order: li })
+            .select().single()
+          if (locData) {
+            await supabase.from('location_hours').insert(
+              ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].map((_, di) => ({
+                location_id: locData.id, day_of_week: di,
+                open_time: loc.open_time || '11:00', close_time: loc.close_time || '21:00',
+                closed: di === 1
+              }))
+            )
+            if (loc.phone) {
+              await supabase.from('location_links').insert({ location_id: locData.id, phone: loc.phone })
+            }
+          }
+        }
+      }
+
       if (links.order_url || links.reservation_url || links.phone) {
         const { error: linkError } = await supabase.from('links')
           .upsert({ restaurant_id: rest.id, order_url: links.order_url || null, reservation_url: links.reservation_url || null, phone: links.phone || null })
@@ -284,7 +306,7 @@ export default function MockupPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <Field label='Location name (optional)'>
                   <input value={locations[li].name} onChange={e => setLocations(l => l.map((loc, idx) => idx === li ? {...loc, name: e.target.value} : loc))}
-                    placeholder="e.g. Location name" style={inputStyle}
+                    placeholder={} style={inputStyle}
                     onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
                 </Field>
                 <Field label='Address'>

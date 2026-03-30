@@ -9,6 +9,7 @@ const NAV = [
   { to: '/hours',  label: 'Hours',     icon: IconClock },
   { to: '/links',  label: 'Links',     icon: IconLink },
   { to: '/photos', label: 'Photos',    icon: IconPhoto },
+  { to: '/admin',  label: 'Admin',     icon: IconAdmin },
   { to: '/settings', label: 'Settings', icon: IconSettings },
 ]
 
@@ -213,6 +214,12 @@ function IconClock({ size = 18 }) {
 function IconLink({ size = 18 }) {
   return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
     <path d="M7 11l4-4M10 7h3V4M8 4H5a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1v-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+}
+function IconLocation({ size = 18 }) {
+  return <svg width={size} height={size} viewBox="0 0 18 18" fill="none">
+    <path d="M9 1.5C6.5 1.5 4.5 3.5 4.5 6c0 3.5 4.5 8.5 4.5 8.5s4.5-5 4.5-8.5c0-2.5-2-4.5-4.5-4.5z" stroke="currentColor" strokeWidth="1.5"/>
+    <circle cx="9" cy="6" r="1.5" fill="currentColor"/>
   </svg>
 }
 function IconSettings({ size = 18 }) {
