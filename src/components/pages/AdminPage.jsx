@@ -12,6 +12,9 @@ export default function AdminPage() {
   const [addModal, setAddModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(null)
   const [openDropdown, setOpenDropdown] = useState(null)
+  const [resendModal, setResendModal] = useState(null)
+  const [resendEmail, setResendEmail] = useState('')
+  const [resending, setResending] = useState(false)
   const [form, setForm] = useState({ name: '', slug: '', email: '', stripeLink: '' })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -83,21 +86,23 @@ export default function AdminPage() {
     navigate('/')
   }
 
-  async function handleResendEmail(r) {
+  async function handleResendEmail() {
+    if (!resendEmail || !resendModal) return
+    setResending(true)
     try {
-      const { data: { users } } = await supabase.auth.admin.listUsers()
-      const user = users?.find(u => u.id === r.owner_id)
-      const email = user?.email
-      if (!email) { toast('No email found for this restaurant', 'error'); return }
       const res = await fetch('/api/onboard-client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, restaurantName: r.name, restaurantId: r.id })
+        body: JSON.stringify({ email: resendEmail, restaurantName: resendModal.name, restaurantId: resendModal.id })
       })
       if (!res.ok) throw new Error('Failed')
-      toast('Welcome email resent!')
+      toast('Welcome email sent!')
+      setResendModal(null)
+      setResendEmail('')
     } catch (err) {
-      toast(err.message || 'Failed to resend email', 'error')
+      toast(err.message || 'Failed to send email', 'error')
+    } finally {
+      setResending(false)
     }
   }
 
@@ -177,7 +182,7 @@ export default function AdminPage() {
                 <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', zIndex: 100, minWidth: 160, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   {[
                     { label: 'View Site', action: () => window.open(`https://preview.ecwebco.com/${r.slug}`, '_blank') },
-                    { label: 'Resend Email', action: () => handleResendEmail(r) },
+                    { label: 'Send Email', action: () => { setResendModal(r); setResendEmail('') } },
                     { label: 'Manage', action: () => handleManage(r) },
                     { label: 'Delete', action: () => setDeleteModal(r), danger: true },
                   ].map((item, idx) => (
@@ -251,6 +256,27 @@ export default function AdminPage() {
           Are you sure you want to delete <strong style={{ color: 'var(--text)' }}>{deleteModal?.name}</strong>? This will permanently remove all their data. This cannot be undone.
         </p>
       </Modal>
+      <Modal
+        open={!!resendModal}
+        onClose={() => { setResendModal(null); setResendEmail('') }}
+        title={`Send Welcome Email — ${resendModal?.name}`}
+        footer={<>
+          <Button variant="ghost" onClick={() => setResendModal(null)}>Cancel</Button>
+          <Button variant="primary" onClick={handleResendEmail} disabled={!resendEmail || resending}>
+            {resending ? 'Sending...' : 'Send Email'}
+          </Button>
+        </>}
+      >
+        <Field label="Email address to send to">
+          <input type="email" value={resendEmail} onChange={e => setResendEmail(e.target.value)}
+            placeholder="owner@restaurant.com" style={inputStyle} autoFocus
+            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+        </Field>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
+          This sends the welcome email with the account setup link.
+        </p>
+      </Modal>
+
     </div>
   )
 }
