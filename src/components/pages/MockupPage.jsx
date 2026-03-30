@@ -167,7 +167,7 @@ export default function MockupPage() {
           <div style={{ fontSize: 15, fontWeight: 500, marginBottom: 20 }}>Restaurant details</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Field label="Restaurant name *">
-              <input value={info.name} onChange={e => setInfo(f => ({ ...f, name: e.target.value }))} placeholder="e.g. La Bella Cucina" style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+              <input value={info.name} onChange={e => setInfo(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Location name" style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
             </Field>
             <Field label="Tagline">
               <input value={info.tagline} onChange={e => setInfo(f => ({ ...f, tagline: e.target.value }))} placeholder="e.g. Authentic Italian since 1998" style={inputStyle} onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
