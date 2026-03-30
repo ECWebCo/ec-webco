@@ -77,6 +77,28 @@ export default function AdminPage() {
     }
   }
 
+  async function handleResendEmail(r) {
+    if (!r.owner_id) {
+      toast('No owner email on file — add their email first', 'error')
+      return
+    }
+    try {
+      // Get the user email from auth
+      const { data: userData } = await supabase.auth.admin.getUserById(r.owner_id)
+      const email = userData?.user?.email
+      if (!email) { toast('Could not find owner email', 'error'); return }
+      const res = await fetch('/api/onboard-client', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, restaurantName: r.name, restaurantId: r.id })
+      })
+      if (!res.ok) throw new Error('Failed')
+      toast('Welcome email resent!')
+    } catch (err) {
+      toast(err.message || 'Failed to resend email', 'error')
+    }
+  }
+
   async function handleManage(r) {
     if (manageRestaurant) await manageRestaurant(r.id)
     navigate('/')
@@ -112,7 +134,7 @@ export default function AdminPage() {
       </div>
 
       <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 220px', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 300px', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           <div>Restaurant</div>
           <div>Slug</div>
           <div>Status</div>
@@ -128,7 +150,7 @@ export default function AdminPage() {
 
         {restaurants.map((r, i) => (
           <div key={r.id} style={{
-            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 220px',
+            display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr 300px',
             gap: 16, padding: '16px 20px', alignItems: 'center',
             borderBottom: i < restaurants.length - 1 ? '1px solid var(--border)' : 'none'
           }}>
@@ -216,3 +238,4 @@ export default function AdminPage() {
     </div>
   )
 }
+
