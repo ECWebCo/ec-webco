@@ -28,17 +28,18 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={session ? <Navigate to="/" replace /> : <LoginPage />} />
-      <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
-        <Route index element={<DashboardPage />} />
-        <Route path="menu" element={<MenuPage />} />
-        <Route path="hours" element={<HoursPage />} />
-        <Route path="links" element={<LinksPage />} />
-        <Route path="photos" element={<PhotosPage />} />
-      <Route path="*" element={<NotFoundPage />} />
-<Route path="admin" element={<AdminPage />} />
-<Route path="mockup" element={<MockupPage />} />
-<Route path="settings" element={<SettingsPage />} />
-<Route path="/setup" element={<SetupPage />} />
+  <Route path="/setup" element={<SetupPage />} />
+  <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
+    <Route index element={<DashboardPage />} />
+    <Route path="menu" element={<MenuPage />} />
+    <Route path="hours" element={<HoursPage />} />
+    <Route path="links" element={<LinksPage />} />
+    <Route path="photos" element={<PhotosPage />} />
+    <Route path="settings" element={<SettingsPage />} />
+    <Route path="admin" element={<AdminPage />} />
+    <Route path="mockup" element={<MockupPage />} />
+  </Route>
+  <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
