@@ -12,6 +12,49 @@ export default function MenuPage() {
   const [items, setItems] = useState({}) // { sectionId: [item, ...] }
   const [loading, setLoading] = useState(true)
 
+  // AI parsing
+  const [menuText, setMenuText] = useState('')
+  const [parsing, setParsing] = useState(false)
+  const [showAI, setShowAI] = useState(false)
+
+  async function parseMenu() {
+    if (!menuText.trim()) return
+    setParsing(true)
+    try {
+      const res = await fetch('/api/parse-menu', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ menuText })
+      })
+      const data = await res.json()
+      if (data.sections) {
+        for (let si = 0; si < data.sections.length; si++) {
+          const sec = data.sections[si]
+          if (!sec.name) continue
+          const { data: sData } = await supabase.from('menu_sections')
+            .insert({ restaurant_id: restaurant.id, name: sec.name, sort_order: sections.length + si })
+            .select().single()
+          if (sData) {
+            for (let ii = 0; ii < sec.items.length; ii++) {
+              const item = sec.items[ii]
+              if (!item.name) continue
+              await supabase.from('menu_items').insert({
+                restaurant_id: restaurant.id, section_id: sData.id,
+                name: item.name, price: parseFloat(item.price) || null,
+                description: item.description || '', available: true, sort_order: ii
+              })
+            }
+          }
+        }
+        setShowAI(false)
+        setMenuText('')
+        toast('Menu imported successfully!')
+        load()
+      }
+    } catch (err) {
+      toast('Failed to parse menu', 'error')
+    } finally { setParsing(false) }
+  }
+
   // Modals
   const [sectionModal, setSectionModal] = useState({ open: false, data: null })
   const [itemModal, setItemModal] = useState({ open: false, sectionId: null, data: null })
@@ -125,6 +168,29 @@ export default function MenuPage() {
           ))}
         </SortableContext>
       </DndContext>
+
+      {/* AI Menu Import Banner */}
+      <div style={{ background: 'var(--gold-light)', border: '1px solid #E8D49A', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showAI ? 12 : 0 }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--gold-dark)' }}>✦ AI Menu Import</div>
+            <div style={{ fontSize: 12, color: 'var(--gold-dark)', opacity: 0.8, marginTop: 2 }}>Paste their menu text and AI structures it automatically</div>
+          </div>
+          <Button size="sm" variant="primary" onClick={() => setShowAI(!showAI)}>{showAI ? 'Cancel' : 'Paste Menu'}</Button>
+        </div>
+        {showAI && (
+          <div style={{ marginTop: 12 }}>
+            <textarea value={menuText} onChange={e => setMenuText(e.target.value)}
+              placeholder="Paste menu text here — from their website, a photo, Google listing, anything..."
+              style={{ ...require('../ui').inputStyle, width: '100%', height: 140, resize: 'vertical', lineHeight: 1.5, background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '9px 12px', fontFamily: 'inherit', fontSize: 14 }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
+              <Button variant="primary" onClick={parseMenu} disabled={!menuText.trim() || parsing}>
+                {parsing ? 'Parsing...' : '✦ Parse with AI'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {sections.length === 0 && (
         <Card style={{ textAlign: 'center', padding: 40, color: 'var(--muted)' }}>

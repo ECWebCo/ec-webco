@@ -113,11 +113,7 @@ export default function SettingsPage() {
                 onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
             </Field>
           </div>
-          <Field label="Address">
-            <input value={form.address} onChange={e => set('address', e.target.value)}
-              placeholder="e.g. 1234 Westheimer Rd, Houston TX 77006" style={inputStyle}
-              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-          </Field>
+
           <Field label="Website URL">
             <input value={form.site_url} onChange={e => set('site_url', e.target.value)}
               placeholder="e.g. https://preview.ecwebco.com/my-restaurant" style={inputStyle}

@@ -5,13 +5,10 @@ import SetupPage from './components/pages/SetupPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './components/pages/DashboardPage'
 import MenuPage from './components/pages/MenuPage'
-import HoursPage from './components/pages/HoursPage'
-import LinksPage from './components/pages/LinksPage'
 import PhotosPage from './components/pages/PhotosPage'
 import SettingsPage from './components/pages/SettingsPage'
-import LocationsPage from './components/pages/LocationsPage'
+import StorefrontsPage from './components/pages/StorefrontsPage'
 import AdminPage from './components/pages/AdminPage'
-import MockupPage from './components/pages/MockupPage'
 import NotFoundPage from './components/pages/NotFoundPage'
 
 function RequireAuth({ children }) {
@@ -32,13 +29,10 @@ export default function App() {
       <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
         <Route index element={<DashboardPage />} />
         <Route path="menu" element={<MenuPage />} />
-        <Route path="hours" element={<HoursPage />} />
-        <Route path="links" element={<LinksPage />} />
         <Route path="photos" element={<PhotosPage />} />
         <Route path="settings" element={<SettingsPage />} />
-        <Route path="locations" element={<LocationsPage />} />
+        <Route path="storefronts" element={<StorefrontsPage />} />
         <Route path="admin" element={<AdminPage />} />
-        <Route path="mockup" element={<MockupPage />} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
