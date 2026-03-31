@@ -182,7 +182,7 @@ export default function MenuPage() {
           <div style={{ marginTop: 12 }}>
             <textarea value={menuText} onChange={e => setMenuText(e.target.value)}
               placeholder="Paste menu text here — from their website, a photo, Google listing, anything..."
-              style={{ ...require('../ui').inputStyle, width: '100%', height: 140, resize: 'vertical', lineHeight: 1.5, background: '#fff', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '9px 12px', fontFamily: 'inherit', fontSize: 14 }} />
+              style={{ ...inputStyle, width: '100%', height: 140, resize: 'vertical', lineHeight: 1.5, background: '#fff' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
               <Button variant="primary" onClick={parseMenu} disabled={!menuText.trim() || parsing}>
                 {parsing ? 'Parsing...' : '✦ Parse with AI'}
