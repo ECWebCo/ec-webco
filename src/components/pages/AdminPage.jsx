@@ -12,10 +12,12 @@ export default function AdminPage() {
   const [addModal, setAddModal] = useState(false)
   const [deleteModal, setDeleteModal] = useState(null)
   const [openDropdown, setOpenDropdown] = useState(null)
-  const [resendModal, setResendModal] = useState(null)
-  const [resendEmail, setResendEmail] = useState('')
-  const [resending, setResending] = useState(false)
-  const [form, setForm] = useState({ name: '', slug: '', email: '', stripeLink: '' })
+  const [welcomeModal, setWelcomeModal] = useState(null)
+  const [paymentModal, setPaymentModal] = useState(null)
+  const [welcomeEmail, setWelcomeEmail] = useState('')
+  const [stripeLink, setStripeLink] = useState('')
+  const [sending, setSending] = useState(false)
+  const [form, setForm] = useState({ name: '', slug: '' })
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
@@ -37,24 +39,15 @@ export default function AdminPage() {
     if (!form.name || !form.slug) return
     setSaving(true)
     try {
-      const { data: rest, error } = await supabase
-        .from('restaurants')
+      const { error } = await supabase.from('restaurants')
         .insert({ name: form.name, slug: form.slug.toLowerCase().replace(/\s+/g, '-') })
-        .select().single()
       if (error) throw error
-      if (form.email) {
-        await fetch('/api/onboard-client', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: form.email, restaurantName: form.name, restaurantId: rest.id, stripeLink: form.stripeLink || null })
-        })
-      }
       toast('Restaurant added!')
       setAddModal(false)
-      setForm({ name: '', slug: '', email: '', stripeLink: '' })
+      setForm({ name: '', slug: '' })
       load()
     } catch (err) {
-      toast(err.message || 'Failed to add restaurant', 'error')
+      toast(err.message || 'Failed to add', 'error')
     } finally {
       setSaving(false)
     }
@@ -78,7 +71,8 @@ export default function AdminPage() {
     } catch (err) {
       toast(err.message || 'Failed to delete', 'error')
     } finally {
-      setDeleting(false) }
+      setDeleting(false)
+    }
   }
 
   async function handleManage(r) {
@@ -86,23 +80,44 @@ export default function AdminPage() {
     navigate('/')
   }
 
-  async function handleResendEmail() {
-    if (!resendEmail || !resendModal) return
-    setResending(true)
+  async function handleSendWelcome() {
+    if (!welcomeEmail || !welcomeModal) return
+    setSending(true)
     try {
       const res = await fetch('/api/onboard-client', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: resendEmail, restaurantName: resendModal.name, restaurantId: resendModal.id })
+        body: JSON.stringify({ email: welcomeEmail, restaurantName: welcomeModal.name, restaurantId: welcomeModal.id })
       })
-      if (!res.ok) throw new Error('Failed')
+      if (!res.ok) throw new Error('Failed to send')
       toast('Welcome email sent!')
-      setResendModal(null)
-      setResendEmail('')
+      setWelcomeModal(null)
+      setWelcomeEmail('')
+      load()
     } catch (err) {
       toast(err.message || 'Failed to send email', 'error')
     } finally {
-      setResending(false)
+      setSending(false)
+    }
+  }
+
+  async function handleSendPayment() {
+    if (!stripeLink || !paymentModal) return
+    setSending(true)
+    try {
+      const res = await fetch('/api/send-payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantName: paymentModal.name, restaurantId: paymentModal.id, stripeLink })
+      })
+      if (!res.ok) throw new Error('Failed to send')
+      toast('Payment email sent!')
+      setPaymentModal(null)
+      setStripeLink('')
+    } catch (err) {
+      toast(err.message || 'Failed to send', 'error')
+    } finally {
+      setSending(false)
     }
   }
 
@@ -126,11 +141,11 @@ export default function AdminPage() {
           <div style={{ fontSize: 26, fontWeight: 600 }}>{restaurants.length}</div>
         </Card>
         <Card style={{ padding: '16px 18px' }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Active Sites</div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Active</div>
           <div style={{ fontSize: 26, fontWeight: 600 }}>{restaurants.filter(r => r.owner_id).length}</div>
         </Card>
         <Card style={{ padding: '16px 18px' }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Pending Setup</div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>Pending</div>
           <div style={{ fontSize: 26, fontWeight: 600 }}>{restaurants.filter(r => !r.owner_id).length}</div>
         </Card>
       </div>
@@ -157,14 +172,10 @@ export default function AdminPage() {
             borderBottom: i < restaurants.length - 1 ? '1px solid var(--border)' : 'none'
           }}>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)' }}>{r.name}</div>
+              <div style={{ fontSize: 14, fontWeight: 500 }}>{r.name}</div>
               <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{r.id.slice(0, 8)}...</div>
             </div>
-            <div>
-              <code style={{ fontSize: 12, background: 'var(--bg)', padding: '3px 8px', borderRadius: 4, color: 'var(--muted)' }}>
-                {r.slug}
-              </code>
-            </div>
+            <code style={{ fontSize: 12, background: 'var(--bg)', padding: '3px 8px', borderRadius: 4, color: 'var(--muted)' }}>{r.slug}</code>
             <div>
               {r.owner_id
                 ? <span style={{ fontSize: 11, padding: '3px 10px', background: 'var(--success-bg)', color: 'var(--success)', borderRadius: 20, fontWeight: 500 }}>● Active</span>
@@ -179,24 +190,24 @@ export default function AdminPage() {
                 Actions ▾
               </Button>
               {openDropdown === r.id && (
-                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', zIndex: 100, minWidth: 160, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+                <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', zIndex: 100, minWidth: 180, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                   {[
                     { label: 'View Site', action: () => window.open(`https://preview.ecwebco.com/${r.slug}`, '_blank') },
-                    { label: 'Send Email', action: () => { setResendModal(r); setResendEmail('') } },
                     { label: 'Manage', action: () => handleManage(r) },
+                    { label: 'Send Welcome Email', action: () => { setWelcomeModal(r); setWelcomeEmail('') } },
+                    { label: 'Send Payment Link', action: () => { setPaymentModal(r); setStripeLink('') } },
                     { label: 'Delete', action: () => setDeleteModal(r), danger: true },
                   ].map((item, idx) => (
                     <button key={idx} onClick={() => { item.action(); setOpenDropdown(null) }} style={{
                       display: 'block', width: '100%', padding: '10px 16px', textAlign: 'left',
-                      background: 'none', border: 'none', borderBottom: idx < 3 ? '1px solid var(--border)' : 'none',
+                      background: 'none', border: 'none',
+                      borderBottom: idx < 4 ? '1px solid var(--border)' : 'none',
                       fontSize: 13, fontFamily: 'inherit', cursor: 'pointer',
                       color: item.danger ? 'var(--danger)' : 'var(--text)'
                     }}
                       onMouseOver={e => e.currentTarget.style.background = 'var(--bg)'}
                       onMouseOut={e => e.currentTarget.style.background = 'none'}
-                    >
-                      {item.label}
-                    </button>
+                    >{item.label}</button>
                   ))}
                 </div>
               )}
@@ -205,17 +216,15 @@ export default function AdminPage() {
         ))}
       </Card>
 
-      <Modal
-        open={addModal}
-        onClose={() => { setAddModal(false); setForm({ name: '', slug: '', email: '', stripeLink: '' }) }}
+      {/* Add Restaurant Modal - name and slug only */}
+      <Modal open={addModal} onClose={() => { setAddModal(false); setForm({ name: '', slug: '' }) }}
         title="Add New Restaurant"
         footer={<>
           <Button variant="ghost" onClick={() => setAddModal(false)}>Cancel</Button>
           <Button variant="primary" onClick={handleAdd} disabled={!form.name || !form.slug || saving}>
             {saving ? 'Adding...' : 'Add Restaurant'}
           </Button>
-        </>}
-      >
+        </>}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Field label="Restaurant name">
             <input value={form.name} onChange={e => { const name = e.target.value; setForm(f => ({ ...f, name, slug: autoSlug(name) })) }}
@@ -226,57 +235,61 @@ export default function AdminPage() {
             <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
               placeholder="e.g. la-bella-cucina" style={inputStyle}
               onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Must be unique and URL-safe</div>
-          </Field>
-          <Field label="Owner email (sends welcome email + setup link)">
-            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              placeholder="owner@restaurant.com" style={inputStyle}
-              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-          </Field>
-          <Field label="Stripe Payment Link (optional)">
-            <input type="url" value={form.stripeLink} onChange={e => setForm(f => ({ ...f, stripeLink: e.target.value }))}
-              placeholder="https://buy.stripe.com/..." style={inputStyle}
-              onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 4 }}>Preview: preview.ecwebco.com/{form.slug || 'your-slug'}</div>
           </Field>
         </div>
       </Modal>
 
-      <Modal
-        open={!!deleteModal}
-        onClose={() => setDeleteModal(null)}
-        title="Delete Restaurant"
+      {/* Send Welcome Email Modal */}
+      <Modal open={!!welcomeModal} onClose={() => { setWelcomeModal(null); setWelcomeEmail('') }}
+        title={`Send Welcome Email — ${welcomeModal?.name}`}
+        footer={<>
+          <Button variant="ghost" onClick={() => setWelcomeModal(null)}>Cancel</Button>
+          <Button variant="primary" onClick={handleSendWelcome} disabled={!welcomeEmail || sending}>
+            {sending ? 'Sending...' : 'Send Welcome Email'}
+          </Button>
+        </>}>
+        <Field label="Client's email address">
+          <input type="email" value={welcomeEmail} onChange={e => setWelcomeEmail(e.target.value)}
+            placeholder="owner@restaurant.com" style={inputStyle} autoFocus
+            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+        </Field>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+          Sends a magic link to access their dashboard. No password needed — they just click the link.
+        </p>
+      </Modal>
+
+      {/* Send Payment Link Modal */}
+      <Modal open={!!paymentModal} onClose={() => { setPaymentModal(null); setStripeLink('') }}
+        title={`Send Payment Link — ${paymentModal?.name}`}
+        footer={<>
+          <Button variant="ghost" onClick={() => setPaymentModal(null)}>Cancel</Button>
+          <Button variant="primary" onClick={handleSendPayment} disabled={!stripeLink || sending}>
+            {sending ? 'Sending...' : 'Send Payment Email'}
+          </Button>
+        </>}>
+        <Field label="Stripe payment link">
+          <input type="url" value={stripeLink} onChange={e => setStripeLink(e.target.value)}
+            placeholder="https://buy.stripe.com/..." style={inputStyle} autoFocus
+            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+        </Field>
+        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+          Sends a follow-up email with the Stripe payment link to go live.
+        </p>
+      </Modal>
+
+      {/* Delete Modal */}
+      <Modal open={!!deleteModal} onClose={() => setDeleteModal(null)} title="Delete Restaurant"
         footer={<>
           <Button variant="ghost" onClick={() => setDeleteModal(null)}>Cancel</Button>
           <Button variant="danger" onClick={handleDelete} disabled={deleting}>
             {deleting ? 'Deleting...' : 'Yes, Delete'}
           </Button>
-        </>}
-      >
+        </>}>
         <p style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.6 }}>
-          Are you sure you want to delete <strong style={{ color: 'var(--text)' }}>{deleteModal?.name}</strong>? This will permanently remove all their data. This cannot be undone.
+          Are you sure you want to delete <strong style={{ color: 'var(--text)' }}>{deleteModal?.name}</strong>? This cannot be undone.
         </p>
       </Modal>
-      <Modal
-        open={!!resendModal}
-        onClose={() => { setResendModal(null); setResendEmail('') }}
-        title={`Send Welcome Email — ${resendModal?.name}`}
-        footer={<>
-          <Button variant="ghost" onClick={() => setResendModal(null)}>Cancel</Button>
-          <Button variant="primary" onClick={handleResendEmail} disabled={!resendEmail || resending}>
-            {resending ? 'Sending...' : 'Send Email'}
-          </Button>
-        </>}
-      >
-        <Field label="Email address to send to">
-          <input type="email" value={resendEmail} onChange={e => setResendEmail(e.target.value)}
-            placeholder="owner@restaurant.com" style={inputStyle} autoFocus
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-        </Field>
-        <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>
-          This sends the welcome email with the account setup link.
-        </p>
-      </Modal>
-
     </div>
   )
 }
