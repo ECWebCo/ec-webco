@@ -30,7 +30,13 @@ export function AuthProvider({ children }) {
       .select('*')
       .eq('owner_id', userId)
       .single()
-    setRestaurant(data)
+    if (!data) {
+      await supabase.auth.signOut()
+      setSession(null)
+      setRestaurant(null)
+    } else {
+      setRestaurant(data)
+    }
   }
 
   async function manageRestaurant(id) {
