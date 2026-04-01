@@ -127,6 +127,7 @@ export default function StorefrontsPage() {
     try {
       let locId
       if (isEdit) {
+        console.log('Saving edit for location ID:', editModal?.id)
         await supabase.from('locations').update({ name: form.name, address: form.address }).eq('id', editModal.id)
         locId = editModal.id
         await supabase.from('location_hours').delete().eq('location_id', locId)
