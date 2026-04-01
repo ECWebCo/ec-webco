@@ -137,7 +137,15 @@ export default function StorefrontsPage() {
           .select().single()
         locId = data.id
       }
-      await supabase.from('location_hours').insert(hours.map(h => ({ ...h, location_id: locId })))
+      const cleanHours = hours.map(h => ({
+        location_id: locId,
+        day_of_week: h.day_of_week,
+        open_time: h.open_time || null,
+        close_time: h.close_time || null,
+        closed: h.closed || false
+      }))
+      const { error: hoursError } = await supabase.from('location_hours').insert(cleanHours)
+      if (hoursError) console.error('Hours error:', hoursError)
       if (form.phone || form.order_url || form.reservation_url) {
         await supabase.from('location_links').insert({
           location_id: locId,
