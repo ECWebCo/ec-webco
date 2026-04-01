@@ -1,218 +1,85 @@
-import { useState, useEffect } from 'react'
-import { useAuth } from '../../hooks/useAuth'
+import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 
-const inputStyle = {
-  width: '100%', padding: '11px 14px',
-  border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)',
-  fontSize: 14, fontFamily: 'inherit', color: 'var(--text)',
-  background: 'var(--bg)', outline: 'none', transition: 'border-color 0.15s'
-}
-
-function Logo() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-      <img src="/ec-logo.png" alt="EC Web Co" style={{ height: 36, flexShrink: 0 }} />
-      <div>
-        <div style={{ fontSize: 15, fontWeight: 600 }}>EC Web Co</div>
-        <div style={{ fontSize: 12, color: 'var(--muted)' }}>Website Manager</div>
-      </div>
-    </div>
-  )
-}
-
-function Card({ children }) {
-  return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 16 }}>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 40, width: '100%', maxWidth: 380 }}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function SubmitBtn({ label, loadingLabel, loading }) {
-  return (
-    <button type="submit" disabled={loading} style={{
-      width: '100%', padding: 13, background: loading ? 'var(--subtle)' : 'var(--gold)',
-      color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)',
-      fontSize: 15, fontWeight: 500, cursor: loading ? 'wait' : 'pointer',
-      fontFamily: 'inherit', transition: 'background 0.15s', marginTop: 4
-    }}>
-      {loading ? loadingLabel : label}
-    </button>
-  )
-}
-
-function ErrorBox({ error }) {
-  if (!error) return null
-  return (
-    <div style={{ padding: '10px 14px', background: 'var(--danger-bg)', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', fontSize: 13, marginBottom: 16 }}>
-      {error}
-    </div>
-  )
-}
-
 export default function LoginPage() {
-  const { signIn } = useAuth()
-  const [view, setView] = useState('login')
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState('')
-  const [message, setMessage] = useState('')
+  const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  useEffect(() => {
-  const hash = window.location.hash
-  const params = new URLSearchParams(hash.replace('#', '?'))
-  const type = params.get('type')
-  const token = params.get('access_token')
-  if (type === 'invite' || type === 'recovery' || type === 'signup' || token) {
-    setView('reset')
-  }
-}, [])
-
-  async function handleSignIn(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setError('')
+    if (!email) return
     setLoading(true)
-    try {
-      await signIn(email, password)
-    } catch (err) {
-      setError('Incorrect email or password. Please try again.')
-    } finally {
+    setError('')
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: 'https://manage.ecwebco.com' }
+    })
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    } else {
+      setSent(true)
       setLoading(false)
     }
   }
-
-  async function handleForgotPassword(e) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/'
-      })
-      if (error) throw error
-      setView('done')
-      setMessage('Check your email for a password reset link.')
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function handleSetPassword(e) {
-    e.preventDefault()
-    setError('')
-    if (password !== confirmPassword) { setError('Passwords do not match.'); return }
-    if (password.length < 8) { setError('Password must be at least 8 characters.'); return }
-    setLoading(true)
-    try {
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) throw error
-      setView('done')
-      setMessage('Password set! You can now sign in.')
-      setTimeout(() => setView('login'), 2000)
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  if (view === 'reset') return (
-    <Card>
-      <Logo />
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Set your password</h1>
-      <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 28 }}>Choose a password to access your dashboard</p>
-      <form onSubmit={handleSetPassword}>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>New password</label>
-          <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="At least 8 characters" style={inputStyle}
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-        </div>
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>Confirm password</label>
-          <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-            placeholder="••••••••" style={inputStyle}
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-        </div>
-        <ErrorBox error={error} />
-        <SubmitBtn label="Set Password" loadingLabel="Saving…" loading={loading} />
-      </form>
-    </Card>
-  )
-
-  if (view === 'forgot') return (
-    <Card>
-      <Logo />
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Reset your password</h1>
-      <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 28 }}>Enter your email and we'll send you a reset link</p>
-      <form onSubmit={handleForgotPassword}>
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>Email address</label>
-          <input type="email" required autoFocus value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="you@restaurant.com" style={inputStyle}
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
-        </div>
-        <ErrorBox error={error} />
-        <SubmitBtn label="Send Reset Link" loadingLabel="Sending…" loading={loading} />
-      </form>
-      <p style={{ textAlign: 'center', marginTop: 16, fontSize: 13 }}>
-        <button onClick={() => setView('login')} style={{ background: 'none', border: 'none', color: 'var(--gold-dark)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-          Back to sign in
-        </button>
-      </p>
-    </Card>
-  )
-
-  if (view === 'done') return (
-    <Card>
-      <Logo />
-      <div style={{ textAlign: 'center', padding: '20px 0' }}>
-        <div style={{ fontSize: 40, marginBottom: 16 }}>✉</div>
-        <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>Check your email</h1>
-        <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 24 }}>{message}</p>
-        <button onClick={() => setView('login')} style={{ background: 'none', border: 'none', color: 'var(--gold-dark)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-          Back to sign in
-        </button>
-      </div>
-    </Card>
-  )
 
   return (
-    <Card>
-      <Logo />
-      <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 6 }}>Welcome back</h1>
-      <p style={{ fontSize: 14, color: 'var(--muted)', marginBottom: 28 }}>Sign in to manage your restaurant website</p>
-      <form onSubmit={handleSignIn}>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>Email address</label>
-          <input type="email" required autoFocus value={email} onChange={e => setEmail(e.target.value)}
-            placeholder="you@restaurant.com" style={inputStyle}
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+    <div style={{
+      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      background: 'var(--bg)', padding: 24
+    }}>
+      <div style={{ width: '100%', maxWidth: 400 }}>
+        <div style={{ textAlign: 'center', marginBottom: 40 }}>
+          <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
+            EC Web Co
+          </div>
+          <div style={{ fontSize: 14, color: 'var(--muted)' }}>Restaurant Manager</div>
         </div>
-        <div style={{ marginBottom: 8 }}>
-          <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: 'var(--muted)', marginBottom: 6 }}>Password</label>
-          <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
-            placeholder="••••••••" style={inputStyle}
-            onFocus={e => e.target.style.borderColor = 'var(--gold)'} onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '32px 28px' }}>
+          {sent ? (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 40, marginBottom: 16 }}>📬</div>
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 8 }}>Check your email</div>
+              <div style={{ fontSize: 14, color: 'var(--muted)', lineHeight: 1.6, marginBottom: 24 }}>
+                We sent a login link to <strong>{email}</strong>. Click the link to sign in — no password needed.
+              </div>
+              <button onClick={() => { setSent(false); setEmail('') }}
+                style={{ background: 'none', border: 'none', color: 'var(--gold-dark)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
+                Use a different email
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>Sign in</div>
+              <div style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24 }}>Enter your email and we'll send you a login link.</div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 12, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>Email</label>
+                <input
+                  type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="you@restaurant.com" required autoFocus
+                  style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: 14, fontFamily: 'inherit', color: 'var(--text)', background: 'var(--bg)', boxSizing: 'border-box' }}
+                  onFocus={e => e.target.style.borderColor = 'var(--gold)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                />
+              </div>
+
+              {error && <div style={{ fontSize: 13, color: 'var(--danger)', marginBottom: 12 }}>{error}</div>}
+
+              <button type="submit" disabled={!email || loading} style={{
+                width: '100%', padding: '11px', background: 'var(--gold)', color: '#fff',
+                border: 'none', borderRadius: 'var(--radius-sm)', fontSize: 14, fontWeight: 500,
+                fontFamily: 'inherit', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1
+              }}>
+                {loading ? 'Sending...' : 'Send Login Link'}
+              </button>
+            </form>
+          )}
         </div>
-        <div style={{ textAlign: 'right', marginBottom: 20 }}>
-          <button type="button" onClick={() => setView('forgot')} style={{ background: 'none', border: 'none', color: 'var(--gold-dark)', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>
-            Forgot password?
-          </button>
-        </div>
-        <ErrorBox error={error} />
-        <SubmitBtn label="Sign In" loadingLabel="Signing in..." loading={loading} />
-      </form>
-      <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--muted)' }}>
-        Need access? Contact <a href="mailto:evan@ecwebco.com" style={{ color: 'var(--gold-dark)' }}>evan@ecwebco.com</a>
-      </p>
-    </Card>
+      </div>
+    </div>
   )
 }
