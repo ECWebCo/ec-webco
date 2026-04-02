@@ -31,9 +31,15 @@ export function AuthProvider({ children }) {
       .eq('owner_id', userId)
       .single()
     if (!data) {
-      await supabase.auth.signOut()
-      setSession(null)
-      setRestaurant(null)
+      // Admin doesn't need a restaurant linked
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email === 'evan@ecwebco.com') {
+        setRestaurant(null)
+      } else {
+        await supabase.auth.signOut()
+        setSession(null)
+        setRestaurant(null)
+      }
     } else {
       setRestaurant(data)
     }
