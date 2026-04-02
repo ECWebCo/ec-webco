@@ -10,12 +10,12 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      if (session) fetchRestaurant(session.user.id)
+      if (session) fetchRestaurant(session.user.id, session.user.email)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session) fetchRestaurant(session.user.id)
+      if (session) fetchRestaurant(session.user.id, session.user.email)
       else setRestaurant(null)
     })
 
@@ -24,16 +24,14 @@ export function AuthProvider({ children }) {
 
   const [managedId, setManagedId] = useState(() => sessionStorage.getItem('managed_restaurant_id'))
 
-  async function fetchRestaurant(userId) {
+  async function fetchRestaurant(userId, userEmail) {
     const { data } = await supabase
       .from('restaurants')
       .select('*')
       .eq('owner_id', userId)
       .single()
     if (!data) {
-      // Admin doesn't need a restaurant linked
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user?.email === 'evan@ecwebco.com') {
+      if (userEmail === 'evan@ecwebco.com') {
         setRestaurant(null)
       } else {
         await supabase.auth.signOut()
