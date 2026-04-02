@@ -21,7 +21,9 @@ function HomeRoute() {
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted)', fontSize: 14 }}>Loading…</div>
+  // If there's a hash in the URL, Supabase is processing a magic link - wait
+  const hasAuthToken = window.location.hash.includes('access_token') || window.location.search.includes('code=')
+  if (loading || hasAuthToken) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted)', fontSize: 14 }}>Loading…</div>
   if (!session) return <Navigate to="/login" replace />
   return children
 }
