@@ -147,14 +147,12 @@ export default function StorefrontsPage() {
       }))
       const { error: hoursError } = await supabase.from('location_hours').insert(cleanHours)
       if (hoursError) console.error('Hours error:', hoursError)
-      if (form.phone || form.order_url || form.reservation_url) {
-        await supabase.from('location_links').insert({
-          location_id: locId,
-          phone: form.phone || null,
-          order_url: form.order_url || null,
-          reservation_url: form.reservation_url || null
-        })
-      }
+      await supabase.from('location_links').insert({
+        location_id: locId,
+        phone: form.phone || null,
+        order_url: form.order_url || null,
+        reservation_url: form.reservation_url || null
+      })
       toast(isEdit ? 'Storefront updated!' : 'Storefront added!')
       setAddModal(false)
       setEditModal(null)
