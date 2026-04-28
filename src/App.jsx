@@ -5,8 +5,7 @@ import SetupPage from './components/pages/SetupPage'
 import DashboardLayout from './components/layout/DashboardLayout'
 import DashboardPage from './components/pages/DashboardPage'
 import MenuPage from './components/pages/MenuPage'
-import PhotosPage from './components/pages/PhotosPage'
-import SettingsPage from './components/pages/SettingsPage'
+import BrandingPage from './components/pages/BrandingPage'
 import StorefrontsPage from './components/pages/StorefrontsPage'
 import AdminPage from './components/pages/AdminPage'
 import NotFoundPage from './components/pages/NotFoundPage'
@@ -21,9 +20,13 @@ function HomeRoute() {
 
 function RequireAuth({ children }) {
   const { session, loading } = useAuth()
-  // If there's a hash in the URL, Supabase is processing a magic link - wait
   const hasAuthToken = window.location.hash.includes('access_token') || window.location.search.includes('code=')
-  if (loading || hasAuthToken) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted)', fontSize: 14 }}>Loading…</div>
+  if (loading || hasAuthToken)
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: 'var(--muted)', fontSize: 14 }}>
+        Loading…
+      </div>
+    )
   if (!session) return <Navigate to="/login" replace />
   return children
 }
@@ -39,8 +42,7 @@ export default function App() {
       <Route path="/" element={<RequireAuth><DashboardLayout /></RequireAuth>}>
         <Route index element={<HomeRoute />} />
         <Route path="menu" element={<MenuPage />} />
-        <Route path="photos" element={<PhotosPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="branding" element={<BrandingPage />} />
         <Route path="storefronts" element={<StorefrontsPage />} />
         <Route path="admin" element={<AdminPage />} />
       </Route>
