@@ -4,13 +4,15 @@ import { supabase } from '../../lib/supabase'
 import { PageHeader, Button, Field, inputStyle, Toggle, Spinner, Card, toast } from '../ui'
 
 const TABS = [
-  { key: 'brand',        label: 'Brand' },
-  { key: 'logo',         label: 'Logo' },
-  { key: 'hero',         label: 'Hero Photos' },
-  { key: 'collages',     label: 'Photo Collages' },
-  { key: 'menu_links',   label: 'Menu Links' },
-  { key: 'announcement', label: 'Announcement' },
-  { key: 'domain',       label: 'Domain' },
+  { key: 'brand',          label: 'Brand' },
+  { key: 'logo',           label: 'Logo' },
+  { key: 'hero',           label: 'Hero Photos' },
+  { key: 'collages',       label: 'Photo Collages' },
+  { key: 'menu_links',     label: 'Menu Links' },
+  { key: 'private_events', label: 'Private Events' },
+  { key: 'announcement',   label: 'Announcement' },
+  { key: 'social',         label: 'Social Media' },
+  { key: 'domain',         label: 'Domain' },
 ]
 
 export default function BrandingPage() {
@@ -57,18 +59,20 @@ export default function BrandingPage() {
         ))}
       </div>
 
-      {tab === 'brand'        && <BrandSection restaurant={restaurant} />}
-      {tab === 'logo'         && <LogoSection restaurant={restaurant} />}
-      {tab === 'hero'         && <HeroSection restaurant={restaurant} photos={data.photos} reload={load} />}
-      {tab === 'collages'     && <CollagesSection restaurant={restaurant} photos={data.photos} reload={load} />}
-      {tab === 'menu_links'   && <MenuLinksSection restaurant={restaurant} menuSections={data.menuSections} />}
-      {tab === 'announcement' && <AnnouncementSection restaurant={restaurant} />}
-      {tab === 'domain'       && <DomainSection restaurant={restaurant} />}
+      {tab === 'brand'          && <BrandSection restaurant={restaurant} />}
+      {tab === 'logo'           && <LogoSection restaurant={restaurant} />}
+      {tab === 'hero'           && <HeroSection restaurant={restaurant} photos={data.photos} reload={load} />}
+      {tab === 'collages'       && <CollagesSection restaurant={restaurant} photos={data.photos} reload={load} />}
+      {tab === 'menu_links'     && <MenuLinksSection restaurant={restaurant} menuSections={data.menuSections} />}
+      {tab === 'private_events' && <PrivateEventsSection restaurant={restaurant} />}
+      {tab === 'announcement'   && <AnnouncementSection restaurant={restaurant} />}
+      {tab === 'social'         && <SocialSection restaurant={restaurant} />}
+      {tab === 'domain'         && <DomainSection restaurant={restaurant} />}
     </div>
   )
 }
 
-/* ─── DropZone — reusable drag-and-drop file picker ────────── */
+/* ─── DropZone ──────────────────────────────────────────────── */
 function DropZone({ onFiles, multiple = true, disabled = false, children, height = 'auto' }) {
   const fileRef = useRef()
   const [dragging, setDragging] = useState(false)
@@ -84,22 +88,9 @@ function DropZone({ onFiles, multiple = true, disabled = false, children, height
     }
     onFiles(multiple ? files : [files[0]])
   }
-
-  function handleDragOver(e) {
-    e.preventDefault()
-    if (!disabled) setDragging(true)
-  }
-
-  function handleDragLeave(e) {
-    // Only stop dragging when leaving the dropzone itself, not children
-    if (e.currentTarget.contains(e.relatedTarget)) return
-    setDragging(false)
-  }
-
-  function handleClick() {
-    if (!disabled) fileRef.current?.click()
-  }
-
+  function handleDragOver(e) { e.preventDefault(); if (!disabled) setDragging(true) }
+  function handleDragLeave(e) { if (e.currentTarget.contains(e.relatedTarget)) return; setDragging(false) }
+  function handleClick() { if (!disabled) fileRef.current?.click() }
   function handleFileSelect(e) {
     const files = Array.from(e.target.files)
     if (files.length) onFiles(files)
@@ -116,25 +107,15 @@ function DropZone({ onFiles, multiple = true, disabled = false, children, height
         style={{
           border: `2px dashed ${dragging ? 'var(--gold)' : 'var(--border)'}`,
           borderRadius: 'var(--radius-lg)',
-          padding: '32px 20px',
-          textAlign: 'center',
+          padding: '32px 20px', textAlign: 'center',
           cursor: disabled ? 'not-allowed' : 'pointer',
           background: dragging ? 'var(--gold-light)' : 'transparent',
-          transition: 'all 0.15s',
-          opacity: disabled ? 0.5 : 1,
-          height,
+          transition: 'all 0.15s', opacity: disabled ? 0.5 : 1, height,
         }}
       >
         {children}
       </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        multiple={multiple}
-        style={{ display: 'none' }}
-        onChange={handleFileSelect}
-      />
+      <input ref={fileRef} type="file" accept="image/*" multiple={multiple} style={{ display: 'none' }} onChange={handleFileSelect} />
     </>
   )
 }
@@ -217,7 +198,7 @@ function BrandSection({ restaurant }) {
           <Field label="Events / catering inbox (optional)">
             <input type="email" value={form.events_email} onChange={e => set('events_email', e.target.value)} placeholder="events@restaurant.com" style={inputStyle} {...focusStyle} />
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>
-              If set, the contact form shows event-focused fields (date, guest count) and routes here. Otherwise it's a general "Get in Touch" form that goes to your contact email.
+              If set, a "Private Events" section appears on your homepage and a "Private Events" tab appears in your nav. The events form sends to this address.
             </p>
           </Field>
         </div>
@@ -248,7 +229,7 @@ function BrandSection({ restaurant }) {
   )
 }
 
-/* ─── Logo section with drag-and-drop ───────────────────────── */
+/* ─── Logo section ──────────────────────────────────────────── */
 function LogoSection({ restaurant }) {
   const [form, setForm] = useState({ logo_url: '', logo_light_url: '' })
   const [saving, setSaving] = useState(false)
@@ -263,11 +244,7 @@ function LogoSection({ restaurant }) {
     setUploading(field)
     const path = `${restaurant.id}/${field}-${Date.now()}.${file.name.split('.').pop()}`
     const { error } = await supabase.storage.from('restaurant-photos').upload(path, file, { upsert: true })
-    if (error) {
-      toast('Failed to upload', 'error')
-      setUploading(null)
-      return
-    }
+    if (error) { toast('Failed to upload', 'error'); setUploading(null); return }
     const { data } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
     setForm(f => ({ ...f, [field]: data.publicUrl }))
     setUploading(null)
@@ -289,16 +266,7 @@ function LogoSection({ restaurant }) {
     <Card style={{ marginBottom: 16 }}>
       <SectionHeader title={label} subtitle={hint} />
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        <div
-          style={{
-            width: 120, height: 120,
-            background: dark ? '#1B2B4B' : 'var(--bg)',
-            border: '1px solid var(--border)',
-            borderRadius: 8,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, overflow: 'hidden',
-          }}
-        >
+        <div style={{ width: 120, height: 120, background: dark ? '#1B2B4B' : 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
           {form[field] ? (
             <img src={form[field]} alt={label} style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }} onError={e => (e.target.style.display = 'none')} />
           ) : (
@@ -306,21 +274,14 @@ function LogoSection({ restaurant }) {
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <DropZone
-            onFiles={files => uploadLogo(files[0], field)}
-            multiple={false}
-            disabled={uploading === field}
-          >
+          <DropZone onFiles={files => uploadLogo(files[0], field)} multiple={false} disabled={uploading === field}>
             <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
               {uploading === field ? 'Uploading…' : (form[field] ? 'Drop a new logo here or click to replace' : 'Drop logo here or click to upload')}
             </div>
             <div style={{ fontSize: 11, color: 'var(--muted)' }}>PNG with transparent background works best</div>
           </DropZone>
           {form[field] && (
-            <button
-              onClick={() => setForm(f => ({ ...f, [field]: '' }))}
-              style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0 }}
-            >
+            <button onClick={() => setForm(f => ({ ...f, [field]: '' }))} style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0 }}>
               Remove logo
             </button>
           )}
@@ -332,13 +293,13 @@ function LogoSection({ restaurant }) {
   return (
     <>
       <LogoUploader field="logo_url" label="Primary Logo" hint="Shown in the navigation bar and footer." />
-      <LogoUploader field="logo_light_url" label="Light Logo (optional)" hint="Shown over your hero photos. If left blank, we'll auto-generate one from your primary logo (works best for simple flat logos)." dark />
+      <LogoUploader field="logo_light_url" label="Light Logo (optional)" hint="Shown over your hero photos. If left blank, we'll auto-generate one from your primary logo." dark />
       <SaveBar onSave={save} saving={saving} />
     </>
   )
 }
 
-/* ─── Hero photos with drag-and-drop ────────────────────────── */
+/* ─── Hero section ──────────────────────────────────────────── */
 function HeroSection({ restaurant, photos, reload }) {
   const heroPhotos = photos.filter(p => p.section === 'hero' || (p.is_hero && !p.section)).sort((a, b) => a.sort_order - b.sort_order)
   const [uploading, setUploading] = useState(false)
@@ -354,12 +315,8 @@ function HeroSection({ restaurant, photos, reload }) {
       if (upErr) continue
       const { data: urlData } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
       await supabase.from('photos').insert({
-        restaurant_id: restaurant.id,
-        storage_path: path,
-        url: urlData.publicUrl,
-        is_hero: true,
-        section: 'hero',
-        sort_order: startIdx + i,
+        restaurant_id: restaurant.id, storage_path: path, url: urlData.publicUrl,
+        is_hero: true, section: 'hero', sort_order: startIdx + i,
       })
     }
     toast('Hero photos added')
@@ -386,8 +343,7 @@ function HeroSection({ restaurant, photos, reload }) {
 
   return (
     <Card>
-      <SectionHeader title="Hero Slideshow" subtitle="The photos that rotate at the top of your homepage. Order them top to bottom." />
-
+      <SectionHeader title="Hero Slideshow" subtitle="The photos that rotate at the top of your homepage." />
       <div style={{ marginBottom: heroPhotos.length > 0 ? 16 : 0 }}>
         <DropZone onFiles={handleUpload} disabled={uploading}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🖼</div>
@@ -397,7 +353,6 @@ function HeroSection({ restaurant, photos, reload }) {
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>Drag multiple files at once, or click to browse</div>
         </DropZone>
       </div>
-
       {heroPhotos.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {heroPhotos.map((p, i) => (
@@ -417,16 +372,15 @@ function HeroSection({ restaurant, photos, reload }) {
   )
 }
 
-/* ─── Photo Collages with drag-and-drop ─────────────────────── */
+/* ─── Photo Collages ────────────────────────────────────────── */
 const COLLAGE_SLOTS = [
-  { key: 'collage_1', title: 'Collage 1 — next to About', desc: 'Shown on the right side of your About section.' },
-  { key: 'collage_2', title: 'Collage 2 — next to Locations', desc: 'Shown on the left side of your Locations section.' },
-  { key: 'collage_3', title: 'Collage 3 — next to Menu Links', desc: 'Shown on the left side of your Menu Links section.' },
+  { key: 'collage_1', title: 'Collage 1 — next to About', desc: 'Right side of your About section.' },
+  { key: 'collage_2', title: 'Collage 2 — next to Locations & Private Events', desc: 'Used for both the Locations and Private Events sections.' },
+  { key: 'collage_3', title: 'Collage 3 — next to Menu Links', desc: 'Left side of your Menu Links section.' },
 ]
 
 function CollagesSection({ restaurant, photos, reload }) {
   const [uploadingSlot, setUploadingSlot] = useState(null)
-
   const photosBySlot = {
     collage_1: photos.filter(p => p.section === 'collage_1').sort((a, b) => a.sort_order - b.sort_order),
     collage_2: photos.filter(p => p.section === 'collage_2').sort((a, b) => a.sort_order - b.sort_order),
@@ -439,9 +393,7 @@ function CollagesSection({ restaurant, photos, reload }) {
     const existingCount = photosBySlot[slotKey].length
     const allowed = Math.max(0, 3 - existingCount)
     const toUpload = Array.from(files).slice(0, allowed)
-    if (toUpload.length < files.length) {
-      toast(`Only ${allowed} more photo${allowed === 1 ? '' : 's'} added — collages hold up to 3.`, 'error')
-    }
+    if (toUpload.length < files.length) toast(`Only ${allowed} more photo${allowed === 1 ? '' : 's'} added — collages hold up to 3.`, 'error')
     for (let i = 0; i < toUpload.length; i++) {
       const file = toUpload[i]
       const path = `${restaurant.id}/${slotKey}-${Date.now()}-${i}-${file.name.replace(/\s/g, '-')}`
@@ -449,11 +401,8 @@ function CollagesSection({ restaurant, photos, reload }) {
       if (upErr) continue
       const { data: urlData } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
       await supabase.from('photos').insert({
-        restaurant_id: restaurant.id,
-        storage_path: path,
-        url: urlData.publicUrl,
-        section: slotKey,
-        sort_order: existingCount + i,
+        restaurant_id: restaurant.id, storage_path: path, url: urlData.publicUrl,
+        section: slotKey, sort_order: existingCount + i,
       })
     }
     toast('Photos added')
@@ -476,13 +425,9 @@ function CollagesSection({ restaurant, photos, reload }) {
         return (
           <Card key={slot.key} style={{ marginBottom: 16 }}>
             <SectionHeader title={slot.title} subtitle={slot.desc} />
-
             {!full && (
               <div style={{ marginBottom: slotPhotos.length > 0 ? 12 : 0 }}>
-                <DropZone
-                  onFiles={files => handleUpload(slot.key, files)}
-                  disabled={uploadingSlot === slot.key}
-                >
+                <DropZone onFiles={files => handleUpload(slot.key, files)} disabled={uploadingSlot === slot.key}>
                   <div style={{ fontSize: 24, marginBottom: 6 }}>🖼</div>
                   <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
                     {uploadingSlot === slot.key ? 'Uploading…' : `Drop photos here or click — ${3 - slotPhotos.length} slot${3 - slotPhotos.length === 1 ? '' : 's'} left`}
@@ -491,32 +436,24 @@ function CollagesSection({ restaurant, photos, reload }) {
                 </DropZone>
               </div>
             )}
-
             {slotPhotos.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                 {slotPhotos.map(p => (
                   <div key={p.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
                     <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <button
-                      onClick={() => remove(p)}
+                    <button onClick={() => remove(p)}
                       style={{
                         position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%',
                         background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
                         fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }}
-                    >
+                      }}>
                       ×
                     </button>
                   </div>
                 ))}
               </div>
             )}
-
-            {full && (
-              <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginTop: 12 }}>
-                Collage is full. Remove a photo above to add a different one.
-              </p>
-            )}
+            {full && <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginTop: 12 }}>Collage is full.</p>}
           </Card>
         )
       })}
@@ -524,7 +461,7 @@ function CollagesSection({ restaurant, photos, reload }) {
   )
 }
 
-/* ─── Menu Links section editor ─────────────────────────────── */
+/* ─── Menu Links ────────────────────────────────────────────── */
 function MenuLinksSection({ restaurant, menuSections }) {
   const [highlights, setHighlights] = useState([])
   const [saving, setSaving] = useState(false)
@@ -533,31 +470,18 @@ function MenuLinksSection({ restaurant, menuSections }) {
     setHighlights(Array.isArray(restaurant.menu_highlights) ? restaurant.menu_highlights : [])
   }, [restaurant.id])
 
-  function add() {
-    setHighlights(h => [...h, { label: '', time: '', section_name: '' }])
-  }
-  function update(i, key, val) {
-    setHighlights(h => h.map((it, idx) => (idx === i ? { ...it, [key]: val } : it)))
-  }
-  function remove(i) {
-    setHighlights(h => h.filter((_, idx) => idx !== i))
-  }
+  function add() { setHighlights(h => [...h, { label: '', time: '', section_name: '' }]) }
+  function update(i, key, val) { setHighlights(h => h.map((it, idx) => (idx === i ? { ...it, [key]: val } : it))) }
+  function remove(i) { setHighlights(h => h.filter((_, idx) => idx !== i)) }
   function moveUp(i) {
     if (i === 0) return
-    setHighlights(h => {
-      const copy = [...h]
-      ;[copy[i - 1], copy[i]] = [copy[i], copy[i - 1]]
-      return copy
-    })
+    setHighlights(h => { const c = [...h]; [c[i - 1], c[i]] = [c[i], c[i - 1]]; return c })
   }
 
   async function save() {
     setSaving(true)
     const cleaned = highlights.filter(h => h.label?.trim())
-    const { error } = await supabase
-      .from('restaurants')
-      .update({ menu_highlights: cleaned })
-      .eq('id', restaurant.id)
+    const { error } = await supabase.from('restaurants').update({ menu_highlights: cleaned }).eq('id', restaurant.id)
     if (error) toast(error.message, 'error')
     else toast('Menu links saved')
     setSaving(false)
@@ -568,17 +492,12 @@ function MenuLinksSection({ restaurant, menuSections }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader
-          title="Menu Links"
-          subtitle="A list of menu highlights (e.g. Lunch, Brunch, Happy Hour) shown on your homepage. Each item links to a section in your menu."
-        />
-
+        <SectionHeader title="Menu Links" subtitle="Menu highlights shown on your homepage. Each item links to a section in your menu." />
         {highlights.length === 0 && (
           <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-            No menu links yet. Add one below — if you don't add any, this section won't appear on your homepage.
+            No menu links yet. If you don't add any, this section won't appear on your homepage.
           </p>
         )}
-
         {highlights.map((h, i) => (
           <div key={i} style={{ padding: '14px 0', borderBottom: i < highlights.length - 1 ? '1px solid var(--border)' : 'none' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
@@ -591,12 +510,9 @@ function MenuLinksSection({ restaurant, menuSections }) {
             </div>
             <Field label="Links to menu section (optional)">
               <select value={h.section_name || ''} onChange={e => update(i, 'section_name', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
-                <option value="">— No link, just display the label —</option>
+                <option value="">— No link —</option>
                 {sectionNames.map(name => <option key={name} value={name}>{name}</option>)}
               </select>
-              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>
-                When a customer taps this link, the menu opens to this section.
-              </p>
             </Field>
             <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
               <Button size="sm" variant="ghost" onClick={() => moveUp(i)} disabled={i === 0}>↑ Move up</Button>
@@ -604,16 +520,91 @@ function MenuLinksSection({ restaurant, menuSections }) {
             </div>
           </div>
         ))}
-
         <button onClick={add} style={{
           display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
           padding: '10px 16px', background: 'var(--surface)',
           border: '2px dashed var(--border)', borderRadius: 'var(--radius)',
-          cursor: 'pointer', color: 'var(--muted)', fontSize: 13,
-          fontFamily: 'inherit', width: '100%',
+          cursor: 'pointer', color: 'var(--muted)', fontSize: 13, fontFamily: 'inherit', width: '100%',
         }}>
           + Add menu link
         </button>
+      </Card>
+      <SaveBar onSave={save} saving={saving} />
+    </>
+  )
+}
+
+/* ─── Private Events ────────────────────────────────────────── */
+function PrivateEventsSection({ restaurant }) {
+  const [form, setForm] = useState({ title: '', body: '' })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setForm({
+      title: restaurant.private_events_title || '',
+      body: restaurant.private_events_body || '',
+    })
+  }, [restaurant.id])
+
+  async function save() {
+    setSaving(true)
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        private_events_title: form.title || null,
+        private_events_body: form.body || null,
+      })
+      .eq('id', restaurant.id)
+    if (error) toast(error.message, 'error')
+    else toast('Private Events copy saved')
+    setSaving(false)
+  }
+
+  const eventsEmail = restaurant.events_email
+  const enabled = !!eventsEmail
+
+  return (
+    <>
+      <Card style={{ marginBottom: 16, background: enabled ? 'transparent' : 'var(--warning-bg)', border: enabled ? undefined : '1px solid #F0C97A' }}>
+        <SectionHeader title="Private Events Section" subtitle="Shown on your homepage when you have an events email set up." />
+        {!enabled ? (
+          <p style={{ fontSize: 13, color: 'var(--warning)', lineHeight: 1.6, margin: 0 }}>
+            ⚠ This section won't appear on your site yet. To enable it, go to <strong>Branding → Brand</strong> and set your <strong>Events / catering inbox</strong>.
+          </p>
+        ) : (
+          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
+            ✓ Section is live. Customize the heading and copy below, or leave blank to use defaults.
+          </p>
+        )}
+      </Card>
+
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label="Section title">
+            <input
+              value={form.title}
+              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+              placeholder="Private Events & Catering"
+              style={inputStyle}
+              {...focusStyle}
+            />
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+              Default: "Private Events & Catering"
+            </p>
+          </Field>
+          <Field label="Body copy">
+            <textarea
+              value={form.body}
+              onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
+              placeholder="Office lunches, client meetings, celebrations and holiday gatherings. We host events of all sizes."
+              style={{ ...inputStyle, height: 120, resize: 'vertical', lineHeight: 1.5 }}
+              {...focusStyle}
+            />
+            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
+              The "Inquire About Events" button will always link to your contact form.
+            </p>
+          </Field>
+        </div>
       </Card>
 
       <SaveBar onSave={save} saving={saving} />
@@ -621,7 +612,7 @@ function MenuLinksSection({ restaurant, menuSections }) {
   )
 }
 
-/* ─── Announcement editor ───────────────────────────────────── */
+/* ─── Announcement ──────────────────────────────────────────── */
 function AnnouncementSection({ restaurant }) {
   const [form, setForm] = useState({ enabled: false, eyebrow: '', title: '', items: [] })
   const [saving, setSaving] = useState(false)
@@ -658,7 +649,7 @@ function AnnouncementSection({ restaurant }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader title="Announcement Popup" subtitle="A popup that shows once per visitor session — great for daily specials or limited-time offers." />
+        <SectionHeader title="Announcement Popup" subtitle="A popup that shows once per visitor session." />
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
           <Toggle checked={form.enabled} onChange={v => setForm(f => ({ ...f, enabled: v }))} />
           <span style={{ fontSize: 13, color: 'var(--text)' }}>{form.enabled ? 'Popup is enabled' : 'Popup is disabled'}</span>
@@ -674,7 +665,7 @@ function AnnouncementSection({ restaurant }) {
       </Card>
 
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader title="Items" subtitle="Each item has an optional label (e.g. day of the week) and a body. Items with a label matching today are highlighted." />
+        <SectionHeader title="Items" />
         {form.items.length === 0 && <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>No items yet.</p>}
         {form.items.map((it, i) => (
           <div key={i} style={{ display: 'flex', gap: 8, padding: '10px 0', borderBottom: i < form.items.length - 1 ? '1px solid var(--border)' : 'none', alignItems: 'flex-start' }}>
@@ -688,6 +679,76 @@ function AnnouncementSection({ restaurant }) {
         </button>
       </Card>
 
+      <SaveBar onSave={save} saving={saving} />
+    </>
+  )
+}
+
+/* ─── Social Media ──────────────────────────────────────────── */
+function SocialSection({ restaurant }) {
+  const [form, setForm] = useState({ instagram: '', facebook: '', tiktok: '' })
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    setForm({
+      instagram: restaurant.instagram || '',
+      facebook: restaurant.facebook || '',
+      tiktok: restaurant.tiktok || '',
+    })
+  }, [restaurant.id])
+
+  async function save() {
+    setSaving(true)
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        instagram: form.instagram || null,
+        facebook: form.facebook || null,
+        tiktok: form.tiktok || null,
+      })
+      .eq('id', restaurant.id)
+    if (error) toast(error.message, 'error')
+    else toast('Social links saved')
+    setSaving(false)
+  }
+
+  return (
+    <>
+      <Card style={{ marginBottom: 16 }}>
+        <SectionHeader
+          title="Social Media"
+          subtitle="Icons appear in the footer. Paste a full URL, or just the handle (e.g. @kpskitchen)."
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <Field label="Instagram">
+            <input
+              value={form.instagram}
+              onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))}
+              placeholder="@yourrestaurant or full URL"
+              style={inputStyle}
+              {...focusStyle}
+            />
+          </Field>
+          <Field label="Facebook">
+            <input
+              value={form.facebook}
+              onChange={e => setForm(f => ({ ...f, facebook: e.target.value }))}
+              placeholder="Page name or full URL"
+              style={inputStyle}
+              {...focusStyle}
+            />
+          </Field>
+          <Field label="TikTok (optional)">
+            <input
+              value={form.tiktok}
+              onChange={e => setForm(f => ({ ...f, tiktok: e.target.value }))}
+              placeholder="@yourrestaurant or full URL"
+              style={inputStyle}
+              {...focusStyle}
+            />
+          </Field>
+        </div>
+      </Card>
       <SaveBar onSave={save} saving={saving} />
     </>
   )
