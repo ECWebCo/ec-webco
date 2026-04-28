@@ -68,6 +68,77 @@ export default function BrandingPage() {
   )
 }
 
+/* ─── DropZone — reusable drag-and-drop file picker ────────── */
+function DropZone({ onFiles, multiple = true, disabled = false, children, height = 'auto' }) {
+  const fileRef = useRef()
+  const [dragging, setDragging] = useState(false)
+
+  function handleDrop(e) {
+    e.preventDefault()
+    setDragging(false)
+    if (disabled) return
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))
+    if (files.length === 0) {
+      toast('Only image files allowed', 'error')
+      return
+    }
+    onFiles(multiple ? files : [files[0]])
+  }
+
+  function handleDragOver(e) {
+    e.preventDefault()
+    if (!disabled) setDragging(true)
+  }
+
+  function handleDragLeave(e) {
+    // Only stop dragging when leaving the dropzone itself, not children
+    if (e.currentTarget.contains(e.relatedTarget)) return
+    setDragging(false)
+  }
+
+  function handleClick() {
+    if (!disabled) fileRef.current?.click()
+  }
+
+  function handleFileSelect(e) {
+    const files = Array.from(e.target.files)
+    if (files.length) onFiles(files)
+    e.target.value = ''
+  }
+
+  return (
+    <>
+      <div
+        onClick={handleClick}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        style={{
+          border: `2px dashed ${dragging ? 'var(--gold)' : 'var(--border)'}`,
+          borderRadius: 'var(--radius-lg)',
+          padding: '32px 20px',
+          textAlign: 'center',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          background: dragging ? 'var(--gold-light)' : 'transparent',
+          transition: 'all 0.15s',
+          opacity: disabled ? 0.5 : 1,
+          height,
+        }}
+      >
+        {children}
+      </div>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*"
+        multiple={multiple}
+        style={{ display: 'none' }}
+        onChange={handleFileSelect}
+      />
+    </>
+  )
+}
+
 /* ─── Brand info ────────────────────────────────────────────── */
 function BrandSection({ restaurant }) {
   const [form, setForm] = useState({
@@ -177,10 +248,11 @@ function BrandSection({ restaurant }) {
   )
 }
 
-/* ─── Logo section ──────────────────────────────────────────── */
+/* ─── Logo section with drag-and-drop ───────────────────────── */
 function LogoSection({ restaurant }) {
   const [form, setForm] = useState({ logo_url: '', logo_light_url: '' })
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(null)
 
   useEffect(() => {
     setForm({ logo_url: restaurant.logo_url || '', logo_light_url: restaurant.logo_light_url || '' })
@@ -188,11 +260,17 @@ function LogoSection({ restaurant }) {
 
   async function uploadLogo(file, field) {
     if (!file) return
+    setUploading(field)
     const path = `${restaurant.id}/${field}-${Date.now()}.${file.name.split('.').pop()}`
     const { error } = await supabase.storage.from('restaurant-photos').upload(path, file, { upsert: true })
-    if (error) { toast('Failed to upload', 'error'); return }
+    if (error) {
+      toast('Failed to upload', 'error')
+      setUploading(null)
+      return
+    }
     const { data } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
     setForm(f => ({ ...f, [field]: data.publicUrl }))
+    setUploading(null)
     toast('Logo uploaded — remember to save')
   }
 
@@ -211,7 +289,16 @@ function LogoSection({ restaurant }) {
     <Card style={{ marginBottom: 16 }}>
       <SectionHeader title={label} subtitle={hint} />
       <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-        <div style={{ width: 120, height: 120, background: dark ? '#1B2B4B' : 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+        <div
+          style={{
+            width: 120, height: 120,
+            background: dark ? '#1B2B4B' : 'var(--bg)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, overflow: 'hidden',
+          }}
+        >
           {form[field] ? (
             <img src={form[field]} alt={label} style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }} onError={e => (e.target.style.display = 'none')} />
           ) : (
@@ -219,13 +306,22 @@ function LogoSection({ restaurant }) {
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <label style={{ display: 'inline-block', padding: '9px 18px', background: 'var(--gold)', color: '#fff', borderRadius: 'var(--radius-sm)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-            {form[field] ? 'Replace' : 'Upload'}
-            <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => uploadLogo(e.target.files[0], field)} />
-          </label>
+          <DropZone
+            onFiles={files => uploadLogo(files[0], field)}
+            multiple={false}
+            disabled={uploading === field}
+          >
+            <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+              {uploading === field ? 'Uploading…' : (form[field] ? 'Drop a new logo here or click to replace' : 'Drop logo here or click to upload')}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--muted)' }}>PNG with transparent background works best</div>
+          </DropZone>
           {form[field] && (
-            <button onClick={() => setForm(f => ({ ...f, [field]: '' }))} style={{ marginLeft: 8, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' }}>
-              Remove
+            <button
+              onClick={() => setForm(f => ({ ...f, [field]: '' }))}
+              style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0 }}
+            >
+              Remove logo
             </button>
           )}
         </div>
@@ -242,10 +338,9 @@ function LogoSection({ restaurant }) {
   )
 }
 
-/* ─── Hero photos ───────────────────────────────────────────── */
+/* ─── Hero photos with drag-and-drop ────────────────────────── */
 function HeroSection({ restaurant, photos, reload }) {
   const heroPhotos = photos.filter(p => p.section === 'hero' || (p.is_hero && !p.section)).sort((a, b) => a.sort_order - b.sort_order)
-  const fileRef = useRef()
   const [uploading, setUploading] = useState(false)
 
   async function handleUpload(files) {
@@ -254,7 +349,7 @@ function HeroSection({ restaurant, photos, reload }) {
     const startIdx = heroPhotos.length
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      const path = `${restaurant.id}/hero-${Date.now()}-${file.name.replace(/\s/g, '-')}`
+      const path = `${restaurant.id}/hero-${Date.now()}-${i}-${file.name.replace(/\s/g, '-')}`
       const { error: upErr } = await supabase.storage.from('restaurant-photos').upload(path, file)
       if (upErr) continue
       const { data: urlData } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
@@ -292,37 +387,37 @@ function HeroSection({ restaurant, photos, reload }) {
   return (
     <Card>
       <SectionHeader title="Hero Slideshow" subtitle="The photos that rotate at the top of your homepage. Order them top to bottom." />
-      <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleUpload(e.target.files)} />
 
-      {heroPhotos.length === 0 ? (
-        <div onClick={() => fileRef.current?.click()} style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-lg)', padding: '48px 20px', textAlign: 'center', cursor: 'pointer' }}>
+      <div style={{ marginBottom: heroPhotos.length > 0 ? 16 : 0 }}>
+        <DropZone onFiles={handleUpload} disabled={uploading}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>🖼</div>
-          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Add hero photos</div>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{uploading ? 'Uploading…' : 'Click to upload — multiple at once is fine'}</div>
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-            {heroPhotos.map((p, i) => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--border)', borderRadius: 8 }}>
-                <div style={{ width: 56, height: 56, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
-                  <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-                <div style={{ flex: 1, fontSize: 12, color: 'var(--muted)' }}>Position {i + 1}</div>
-                <Button size="sm" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
-                <Button size="sm" variant="ghost" onClick={() => move(i, 1)} disabled={i === heroPhotos.length - 1}>↓</Button>
-                <Button size="sm" variant="danger" onClick={() => remove(p)}>Remove</Button>
-              </div>
-            ))}
+          <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>
+            {uploading ? 'Uploading…' : 'Drop photos here or click to upload'}
           </div>
-          <Button variant="primary" onClick={() => fileRef.current?.click()}>{uploading ? 'Uploading…' : '+ Add more photos'}</Button>
-        </>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>Drag multiple files at once, or click to browse</div>
+        </DropZone>
+      </div>
+
+      {heroPhotos.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {heroPhotos.map((p, i) => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 8, border: '1px solid var(--border)', borderRadius: 8 }}>
+              <div style={{ width: 56, height: 56, background: 'var(--bg)', borderRadius: 6, overflow: 'hidden', flexShrink: 0 }}>
+                <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+              <div style={{ flex: 1, fontSize: 12, color: 'var(--muted)' }}>Position {i + 1}</div>
+              <Button size="sm" variant="ghost" onClick={() => move(i, -1)} disabled={i === 0}>↑</Button>
+              <Button size="sm" variant="ghost" onClick={() => move(i, 1)} disabled={i === heroPhotos.length - 1}>↓</Button>
+              <Button size="sm" variant="danger" onClick={() => remove(p)}>Remove</Button>
+            </div>
+          ))}
+        </div>
       )}
     </Card>
   )
 }
 
-/* ─── Photo Collages ────────────────────────────────────────── */
+/* ─── Photo Collages with drag-and-drop ─────────────────────── */
 const COLLAGE_SLOTS = [
   { key: 'collage_1', title: 'Collage 1 — next to About', desc: 'Shown on the right side of your About section.' },
   { key: 'collage_2', title: 'Collage 2 — next to Locations', desc: 'Shown on the left side of your Locations section.' },
@@ -330,7 +425,6 @@ const COLLAGE_SLOTS = [
 ]
 
 function CollagesSection({ restaurant, photos, reload }) {
-  const fileRefs = useRef({})
   const [uploadingSlot, setUploadingSlot] = useState(null)
 
   const photosBySlot = {
@@ -346,11 +440,11 @@ function CollagesSection({ restaurant, photos, reload }) {
     const allowed = Math.max(0, 3 - existingCount)
     const toUpload = Array.from(files).slice(0, allowed)
     if (toUpload.length < files.length) {
-      toast(`Only the first ${allowed} photo(s) added — collages hold up to 3.`, 'error')
+      toast(`Only ${allowed} more photo${allowed === 1 ? '' : 's'} added — collages hold up to 3.`, 'error')
     }
     for (let i = 0; i < toUpload.length; i++) {
       const file = toUpload[i]
-      const path = `${restaurant.id}/${slotKey}-${Date.now()}-${file.name.replace(/\s/g, '-')}`
+      const path = `${restaurant.id}/${slotKey}-${Date.now()}-${i}-${file.name.replace(/\s/g, '-')}`
       const { error: upErr } = await supabase.storage.from('restaurant-photos').upload(path, file)
       if (upErr) continue
       const { data: urlData } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
@@ -382,53 +476,46 @@ function CollagesSection({ restaurant, photos, reload }) {
         return (
           <Card key={slot.key} style={{ marginBottom: 16 }}>
             <SectionHeader title={slot.title} subtitle={slot.desc} />
-            <input
-              ref={el => (fileRefs.current[slot.key] = el)}
-              type="file"
-              accept="image/*"
-              multiple
-              style={{ display: 'none' }}
-              onChange={e => handleUpload(slot.key, e.target.files)}
-            />
-            {slotPhotos.length === 0 ? (
-              <div
-                onClick={() => fileRefs.current[slot.key]?.click()}
-                style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-lg)', padding: '36px 20px', textAlign: 'center', cursor: 'pointer' }}
-              >
-                <div style={{ fontSize: 24, marginBottom: 6 }}>🖼</div>
-                <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>Add up to 3 photos for this collage</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{uploadingSlot === slot.key ? 'Uploading…' : 'Click to upload'}</div>
+
+            {!full && (
+              <div style={{ marginBottom: slotPhotos.length > 0 ? 12 : 0 }}>
+                <DropZone
+                  onFiles={files => handleUpload(slot.key, files)}
+                  disabled={uploadingSlot === slot.key}
+                >
+                  <div style={{ fontSize: 24, marginBottom: 6 }}>🖼</div>
+                  <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+                    {uploadingSlot === slot.key ? 'Uploading…' : `Drop photos here or click — ${3 - slotPhotos.length} slot${3 - slotPhotos.length === 1 ? '' : 's'} left`}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>Drag multiple files at once</div>
+                </DropZone>
               </div>
-            ) : (
-              <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
-                  {slotPhotos.map(p => (
-                    <div key={p.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                      <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      <button
-                        onClick={() => remove(p)}
-                        style={{
-                          position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%',
-                          background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
-                          fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {!full && (
-                  <Button variant="ghost" size="sm" onClick={() => fileRefs.current[slot.key]?.click()}>
-                    {uploadingSlot === slot.key ? 'Uploading…' : `+ Add photo (${3 - slotPhotos.length} slot${3 - slotPhotos.length === 1 ? '' : 's'} left)`}
-                  </Button>
-                )}
-                {full && (
-                  <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic' }}>
-                    Collage is full. Remove a photo above to add a different one.
-                  </p>
-                )}
-              </>
+            )}
+
+            {slotPhotos.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {slotPhotos.map(p => (
+                  <div key={p.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
+                    <img src={p.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button
+                      onClick={() => remove(p)}
+                      style={{
+                        position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: '50%',
+                        background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', cursor: 'pointer',
+                        fontSize: 14, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {full && (
+              <p style={{ fontSize: 12, color: 'var(--muted)', fontStyle: 'italic', marginTop: 12 }}>
+                Collage is full. Remove a photo above to add a different one.
+              </p>
             )}
           </Card>
         )
@@ -476,7 +563,6 @@ function MenuLinksSection({ restaurant, menuSections }) {
     setSaving(false)
   }
 
-  // Unique section names for the dropdown
   const sectionNames = Array.from(new Set(menuSections.map(s => s.name).filter(Boolean)))
 
   return (
@@ -494,45 +580,19 @@ function MenuLinksSection({ restaurant, menuSections }) {
         )}
 
         {highlights.map((h, i) => (
-          <div
-            key={i}
-            style={{
-              padding: '14px 0',
-              borderBottom: i < highlights.length - 1 ? '1px solid var(--border)' : 'none',
-            }}
-          >
+          <div key={i} style={{ padding: '14px 0', borderBottom: i < highlights.length - 1 ? '1px solid var(--border)' : 'none' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
               <Field label="Label">
-                <input
-                  value={h.label || ''}
-                  onChange={e => update(i, 'label', e.target.value)}
-                  placeholder="e.g. Lunch"
-                  style={inputStyle}
-                  {...focusStyle}
-                />
+                <input value={h.label || ''} onChange={e => update(i, 'label', e.target.value)} placeholder="e.g. Lunch" style={inputStyle} {...focusStyle} />
               </Field>
               <Field label="Time / description">
-                <input
-                  value={h.time || ''}
-                  onChange={e => update(i, 'time', e.target.value)}
-                  placeholder="e.g. Tue – Fri · 11AM – 4PM"
-                  style={inputStyle}
-                  {...focusStyle}
-                />
+                <input value={h.time || ''} onChange={e => update(i, 'time', e.target.value)} placeholder="e.g. Tue – Fri · 11AM – 4PM" style={inputStyle} {...focusStyle} />
               </Field>
             </div>
             <Field label="Links to menu section (optional)">
-              <select
-                value={h.section_name || ''}
-                onChange={e => update(i, 'section_name', e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer' }}
-              >
+              <select value={h.section_name || ''} onChange={e => update(i, 'section_name', e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="">— No link, just display the label —</option>
-                {sectionNames.map(name => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
+                {sectionNames.map(name => <option key={name} value={name}>{name}</option>)}
               </select>
               <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>
                 When a customer taps this link, the menu opens to this section.
@@ -545,16 +605,13 @@ function MenuLinksSection({ restaurant, menuSections }) {
           </div>
         ))}
 
-        <button
-          onClick={add}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
-            padding: '10px 16px', background: 'var(--surface)',
-            border: '2px dashed var(--border)', borderRadius: 'var(--radius)',
-            cursor: 'pointer', color: 'var(--muted)', fontSize: 13,
-            fontFamily: 'inherit', width: '100%',
-          }}
-        >
+        <button onClick={add} style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginTop: 12,
+          padding: '10px 16px', background: 'var(--surface)',
+          border: '2px dashed var(--border)', borderRadius: 'var(--radius)',
+          cursor: 'pointer', color: 'var(--muted)', fontSize: 13,
+          fontFamily: 'inherit', width: '100%',
+        }}>
           + Add menu link
         </button>
       </Card>
