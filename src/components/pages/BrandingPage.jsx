@@ -374,18 +374,20 @@ function HeroSection({ restaurant, photos, reload }) {
 
 /* ─── Photo Collages ────────────────────────────────────────── */
 const COLLAGE_SLOTS = [
-  { key: 'collage_1', title: 'Collage 1 — next to About', desc: 'Right side of your About section.' },
-  { key: 'collage_2', title: 'Collage 2 — next to Locations & Private Events', desc: 'Used for both the Locations and Private Events sections.' },
-  { key: 'collage_3', title: 'Collage 3 — next to Menu Links', desc: 'Left side of your Menu Links section.' },
+  { key: 'collage_1', title: 'Collage 1 — next to About', desc: 'Shown beside your About section.' },
+  { key: 'collage_2', title: 'Collage 2 — next to Locations', desc: 'Shown beside your Locations section.' },
+  { key: 'collage_3', title: 'Collage 3 — next to Menu Links', desc: 'Shown beside your Menu Links section.' },
+  { key: 'collage_4', title: 'Collage 4 — next to Private Events', desc: 'Shown beside your Private Events section (only if you have an events email set).' },
 ]
 
 function CollagesSection({ restaurant, photos, reload }) {
   const [uploadingSlot, setUploadingSlot] = useState(null)
   const photosBySlot = {
-    collage_1: photos.filter(p => p.section === 'collage_1').sort((a, b) => a.sort_order - b.sort_order),
-    collage_2: photos.filter(p => p.section === 'collage_2').sort((a, b) => a.sort_order - b.sort_order),
-    collage_3: photos.filter(p => p.section === 'collage_3').sort((a, b) => a.sort_order - b.sort_order),
-  }
+  collage_1: photos.filter(p => p.section === 'collage_1').sort((a, b) => a.sort_order - b.sort_order),
+  collage_2: photos.filter(p => p.section === 'collage_2').sort((a, b) => a.sort_order - b.sort_order),
+  collage_3: photos.filter(p => p.section === 'collage_3').sort((a, b) => a.sort_order - b.sort_order),
+  collage_4: photos.filter(p => p.section === 'collage_4').sort((a, b) => a.sort_order - b.sort_order),
+}
 
   async function handleUpload(slotKey, files) {
     if (!files?.length) return
