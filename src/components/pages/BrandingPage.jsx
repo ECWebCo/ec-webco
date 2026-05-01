@@ -3,24 +3,29 @@ import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../lib/supabase'
 import { PageHeader, Button, Field, inputStyle, Toggle, Spinner, Card, toast } from '../ui'
 
-const TABS = [
-  { key: 'brand',          label: 'Brand' },
-  { key: 'logo',           label: 'Logo' },
-  { key: 'hero',           label: 'Hero Photos' },
-  { key: 'collages',       label: 'Photo Collages' },
-  { key: 'menu_links',     label: 'Menu Links' },
-  { key: 'private_events', label: 'Private Events' },
-  { key: 'announcement',   label: 'Announcement' },
-  { key: 'social',         label: 'Social Media' },
-  { key: 'seo',            label: 'SEO' },
-  { key: 'domain',         label: 'Domain' },
-]
+const ADMIN_EMAIL = 'evan@ecwebco.com'
 
 export default function BrandingPage() {
-  const { restaurant } = useAuth()
+  const { restaurant, session } = useAuth()
+  const isAdmin = session?.user?.email === ADMIN_EMAIL
+
   const [tab, setTab] = useState('brand')
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState(null)
+
+  // Build tab list — admin sees all, restaurants see a subset
+  const TABS = [
+    { key: 'brand',          label: 'Brand' },
+    { key: 'logo',           label: 'Logo' },
+    { key: 'hero',           label: 'Hero Photos' },
+    { key: 'collages',       label: 'Photo Collages' },
+    isAdmin && { key: 'menu_links',     label: 'Menu Links' },
+    isAdmin && { key: 'private_events', label: 'Private Events' },
+    { key: 'announcement',   label: 'Announcement' },
+    { key: 'social',         label: 'Social Media' },
+    isAdmin && { key: 'seo',            label: 'SEO' },
+    isAdmin && { key: 'domain',         label: 'Domain' },
+  ].filter(Boolean)
 
   useEffect(() => {
     if (restaurant?.id) load()
@@ -60,16 +65,16 @@ export default function BrandingPage() {
         ))}
       </div>
 
-      {tab === 'brand'          && <BrandSection restaurant={restaurant} />}
+      {tab === 'brand'          && <BrandSection restaurant={restaurant} isAdmin={isAdmin} />}
       {tab === 'logo'           && <LogoSection restaurant={restaurant} />}
       {tab === 'hero'           && <HeroSection restaurant={restaurant} photos={data.photos} reload={load} />}
       {tab === 'collages'       && <CollagesSection restaurant={restaurant} photos={data.photos} reload={load} />}
-      {tab === 'menu_links'     && <MenuLinksSection restaurant={restaurant} menuSections={data.menuSections} />}
-      {tab === 'private_events' && <PrivateEventsSection restaurant={restaurant} />}
+      {tab === 'menu_links'     && isAdmin && <MenuLinksSection restaurant={restaurant} menuSections={data.menuSections} />}
+      {tab === 'private_events' && isAdmin && <PrivateEventsSection restaurant={restaurant} />}
       {tab === 'announcement'   && <AnnouncementSection restaurant={restaurant} />}
       {tab === 'social'         && <SocialSection restaurant={restaurant} />}
-      {tab === 'seo'            && <SEOSection restaurant={restaurant} />}
-      {tab === 'domain'         && <DomainSection restaurant={restaurant} />}
+      {tab === 'seo'            && isAdmin && <SEOSection restaurant={restaurant} />}
+      {tab === 'domain'         && isAdmin && <DomainSection restaurant={restaurant} />}
     </div>
   )
 }
@@ -122,8 +127,22 @@ function DropZone({ onFiles, multiple = true, disabled = false, children, height
   )
 }
 
+/* ─── Admin-only section wrapper ────────────────────────────── */
+function AdminBadge() {
+  return (
+    <span style={{
+      display: 'inline-block', marginLeft: 8, padding: '2px 8px',
+      background: 'var(--gold)', color: '#fff', borderRadius: 999,
+      fontSize: 9, fontWeight: 700, letterSpacing: '1px',
+      textTransform: 'uppercase', verticalAlign: 'middle',
+    }}>
+      Admin Only
+    </span>
+  )
+}
+
 /* ─── Brand info ────────────────────────────────────────────── */
-function BrandSection({ restaurant }) {
+function BrandSection({ restaurant, isAdmin }) {
   const [form, setForm] = useState({
     name: '', tagline: '', about: '',
     email: '', events_email: '', city: '',
@@ -150,20 +169,25 @@ function BrandSection({ restaurant }) {
   async function save() {
     setSaving(true)
     try {
+      const updates = {
+        name: form.name,
+        about: form.about,
+        description: form.about,
+        email: form.email,
+        events_email: form.events_email || null,
+        city: form.city,
+      }
+      // Admin-only fields — only update if admin
+      if (isAdmin) {
+        updates.tagline = form.tagline
+        updates.color_ink = form.color_ink || null
+        updates.color_gold = form.color_gold || null
+        updates.color_off = form.color_off || null
+      }
+
       const { error } = await supabase
         .from('restaurants')
-        .update({
-          name: form.name,
-          tagline: form.tagline,
-          about: form.about,
-          description: form.about,
-          email: form.email,
-          events_email: form.events_email || null,
-          city: form.city,
-          color_ink: form.color_ink || null,
-          color_gold: form.color_gold || null,
-          color_off: form.color_off || null,
-        })
+        .update(updates)
         .eq('id', restaurant.id)
       if (error) throw error
       toast('Brand info saved!')
@@ -182,9 +206,13 @@ function BrandSection({ restaurant }) {
           <Field label="Restaurant name">
             <input value={form.name} onChange={e => set('name', e.target.value)} style={inputStyle} {...focusStyle} />
           </Field>
-          <Field label="Tagline">
-            <input value={form.tagline} onChange={e => set('tagline', e.target.value)} placeholder="A short phrase that describes your place" style={inputStyle} {...focusStyle} />
-          </Field>
+
+          {isAdmin && (
+            <Field label={<>Tagline <AdminBadge /></>}>
+              <input value={form.tagline} onChange={e => set('tagline', e.target.value)} placeholder="A short phrase that describes your place" style={inputStyle} {...focusStyle} />
+            </Field>
+          )}
+
           <Field label="About (shown in the homepage About section)">
             <textarea value={form.about} onChange={e => set('about', e.target.value)} placeholder="A paragraph about your restaurant"
               style={{ ...inputStyle, height: 120, resize: 'vertical', lineHeight: 1.5 }} {...focusStyle} />
@@ -200,31 +228,33 @@ function BrandSection({ restaurant }) {
           <Field label="Events / catering inbox (optional)">
             <input type="email" value={form.events_email} onChange={e => set('events_email', e.target.value)} placeholder="events@restaurant.com" style={inputStyle} {...focusStyle} />
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>
-              If set, a "Private Events" section appears on your homepage and a "Private Events" tab appears in your nav.
+              If set, a "Private Events" section appears on your homepage.
             </p>
           </Field>
         </div>
       </Card>
 
-      <Card style={{ marginBottom: 24 }}>
-        <SectionHeader title="Brand Colors" subtitle="Pick three colors used across your website" />
-        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
-          {[
-            { key: 'color_ink',  label: 'Primary (text & nav)',         dflt: '#1B2B4B' },
-            { key: 'color_gold', label: 'Accent (buttons & highlights)', dflt: '#C9A84C' },
-            { key: 'color_off',  label: 'Background',                   dflt: '#FAFAF8' },
-          ].map(c => (
-            <div key={c.key} style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 12, minWidth: 180 }}>
-              <input type="color" value={form[c.key] || c.dflt} onChange={e => set(c.key, e.target.value)}
-                style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid var(--border)', cursor: 'pointer', padding: 2, background: 'none' }} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{form[c.key] || c.dflt}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>{c.label}</div>
+      {isAdmin && (
+        <Card style={{ marginBottom: 24 }}>
+          <SectionHeader title={<>Brand Colors <AdminBadge /></>} subtitle="Pick three colors used across the website" />
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+            {[
+              { key: 'color_ink',  label: 'Primary (text & nav)',         dflt: '#1B2B4B' },
+              { key: 'color_gold', label: 'Accent (buttons & highlights)', dflt: '#C9A84C' },
+              { key: 'color_off',  label: 'Background',                   dflt: '#FAFAF8' },
+            ].map(c => (
+              <div key={c.key} style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 12, minWidth: 180 }}>
+                <input type="color" value={form[c.key] || c.dflt} onChange={e => set(c.key, e.target.value)}
+                  style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid var(--border)', cursor: 'pointer', padding: 2, background: 'none' }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{form[c.key] || c.dflt}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{c.label}</div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <SaveBar onSave={save} saving={saving} />
     </>
@@ -465,7 +495,7 @@ function CollagesSection({ restaurant, photos, reload }) {
   )
 }
 
-/* ─── Menu Links ────────────────────────────────────────────── */
+/* ─── Menu Links (admin only) ───────────────────────────────── */
 function MenuLinksSection({ restaurant, menuSections }) {
   const [highlights, setHighlights] = useState([])
   const [saving, setSaving] = useState(false)
@@ -496,10 +526,10 @@ function MenuLinksSection({ restaurant, menuSections }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader title="Menu Links" subtitle="Menu highlights shown on your homepage. Each item links to a section in your menu." />
+        <SectionHeader title={<>Menu Links <AdminBadge /></>} subtitle="Menu highlights shown on the homepage. Each item links to a section in the menu." />
         {highlights.length === 0 && (
           <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 12 }}>
-            No menu links yet. If you don't add any, this section won't appear on your homepage.
+            No menu links yet. If none added, this section won't appear on the homepage.
           </p>
         )}
         {highlights.map((h, i) => (
@@ -538,7 +568,7 @@ function MenuLinksSection({ restaurant, menuSections }) {
   )
 }
 
-/* ─── Private Events ────────────────────────────────────────── */
+/* ─── Private Events (admin only) ───────────────────────────── */
 function PrivateEventsSection({ restaurant }) {
   const [form, setForm] = useState({ title: '', body: '' })
   const [saving, setSaving] = useState(false)
@@ -569,14 +599,14 @@ function PrivateEventsSection({ restaurant }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader title="Private Events Section" subtitle="Shown on your homepage when you have an events email set up." />
+        <SectionHeader title={<>Private Events Section <AdminBadge /></>} subtitle="Shown on the homepage when an events email is set." />
         {!enabled ? (
           <p style={{ fontSize: 13, color: 'var(--warning)', lineHeight: 1.6, margin: 0 }}>
-            ⚠ This section won't appear on your site yet. To enable it, go to Branding → Brand and set your Events / catering inbox.
+            ⚠ Section won't appear yet. Set the Events / catering inbox in Branding → Brand to enable.
           </p>
         ) : (
           <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
-            ✓ Section is live. Customize the heading and copy below, or leave blank to use defaults.
+            ✓ Section is live. Customize heading and copy below, or leave blank for defaults.
           </p>
         )}
       </Card>
@@ -701,7 +731,7 @@ function SocialSection({ restaurant }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader title="Social Media" subtitle="Icons appear in the footer. Paste a full URL, or just the handle (e.g. @kpskitchen)." />
+        <SectionHeader title="Social Media" subtitle="Icons appear in the footer. Paste a full URL, or just the handle (e.g. @yourname)." />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Instagram">
             <input value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} placeholder="@yourrestaurant or full URL" style={inputStyle} {...focusStyle} />
@@ -719,7 +749,7 @@ function SocialSection({ restaurant }) {
   )
 }
 
-/* ─── SEO ───────────────────────────────────────────────────── */
+/* ─── SEO (admin only) ──────────────────────────────────────── */
 function SEOSection({ restaurant }) {
   const [form, setForm] = useState({ favicon_url: '', seo_description: '' })
   const [saving, setSaving] = useState(false)
@@ -758,7 +788,6 @@ function SEOSection({ restaurant }) {
     setSaving(false)
   }
 
-  // Compute what description will actually show (preview)
   const previewDescription = form.seo_description ||
     (restaurant.about
       ? (restaurant.about.length > 155 ? restaurant.about.slice(0, 155).trim() + '…' : restaurant.about)
@@ -770,16 +799,9 @@ function SEOSection({ restaurant }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader
-          title="Favicon"
-          subtitle="The little icon in the browser tab. Use a square image (e.g., 256×256 PNG) — your logo cropped to a square works well."
-        />
+        <SectionHeader title={<>Favicon <AdminBadge /></>} subtitle="Square image, e.g., 256×256 PNG. Logo cropped to a square works well." />
         <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-          <div style={{
-            width: 96, height: 96, background: 'var(--bg)', border: '1px solid var(--border)',
-            borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, overflow: 'hidden',
-          }}>
+          <div style={{ width: 96, height: 96, background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
             {form.favicon_url ? (
               <img src={form.favicon_url} alt="favicon preview" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }} />
             ) : (
@@ -801,7 +823,7 @@ function SEOSection({ restaurant }) {
             )}
             {!form.favicon_url && restaurant.logo_url && (
               <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
-                If you don't upload a favicon, your primary logo will be used. (It may look stretched at small sizes — a square favicon is recommended.)
+                If no favicon uploaded, the primary logo is used. (May look stretched at small sizes.)
               </p>
             )}
           </div>
@@ -809,21 +831,18 @@ function SEOSection({ restaurant }) {
       </Card>
 
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader
-          title="Meta Description"
-          subtitle="The short blurb shown under your link in Google search results. Around 150 characters."
-        />
+        <SectionHeader title={<>Meta Description <AdminBadge /></>} subtitle="The blurb shown under the link in Google search results. Around 150 characters." />
         <Field label="Description">
           <textarea
             value={form.seo_description}
             onChange={e => setForm(f => ({ ...f, seo_description: e.target.value }))}
-            placeholder={restaurant.about ? '(Will use your About paragraph if left blank)' : `Visit ${restaurant.name || 'our restaurant'}`}
+            placeholder={restaurant.about ? '(Will use About paragraph if left blank)' : `Visit ${restaurant.name || 'this restaurant'}`}
             style={{ ...inputStyle, height: 90, resize: 'vertical', lineHeight: 1.5 }}
             {...focusStyle}
           />
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
             <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
-              {form.seo_description ? '' : 'Leave blank to auto-use your About paragraph (truncated to 155 chars).'}
+              {form.seo_description ? '' : 'Leave blank to auto-use About paragraph (truncated to 155 chars).'}
             </p>
             <span style={{ fontSize: 11, color: overLimit ? 'var(--danger)' : 'var(--muted)' }}>
               {charCount}/160
@@ -852,7 +871,7 @@ function SEOSection({ restaurant }) {
   )
 }
 
-/* ─── Domain ────────────────────────────────────────────────── */
+/* ─── Domain (admin only) ───────────────────────────────────── */
 function DomainSection({ restaurant }) {
   const [form, setForm] = useState({ custom_domain: '' })
   const [saving, setSaving] = useState(false)
@@ -870,15 +889,15 @@ function DomainSection({ restaurant }) {
 
   return (
     <Card>
-      <SectionHeader title="Custom Domain" subtitle="Connect your own domain so customers see yourrestaurant.com." />
-      <Field label="Your domain">
+      <SectionHeader title={<>Custom Domain <AdminBadge /></>} subtitle="Connect a custom domain so customers see yourrestaurant.com." />
+      <Field label="Domain">
         <input value={form.custom_domain} onChange={e => setForm({ custom_domain: e.target.value })} placeholder="yourrestaurant.com" style={inputStyle} {...focusStyle} />
       </Field>
       <div style={{ marginTop: 16 }}>
         <Button variant="primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Domain'}</Button>
       </div>
       <p style={{ fontSize: 12, color: 'var(--muted)', marginTop: 16, lineHeight: 1.6 }}>
-        DNS setup instructions and verification status will appear here once we wire up the domain integration.
+        DNS setup instructions and verification status will appear here once the domain integration is wired up.
       </p>
     </Card>
   )
