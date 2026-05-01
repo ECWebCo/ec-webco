@@ -64,6 +64,8 @@ function StorefrontForm({ form, setForm, hours, updateHour }) {
 export default function StorefrontsPage() {
   const { restaurant } = useAuth()
   const [locations, setLocations] = useState([])
+  const [menuMode, setMenuMode] = useState('shared')
+  const [savingMode, setSavingMode] = useState(false)
   const [loading, setLoading] = useState(true)
   const [addModal, setAddModal] = useState(false)
   const [editModal, setEditModal] = useState(null)
@@ -73,6 +75,10 @@ export default function StorefrontsPage() {
 
   useEffect(() => { if (restaurant?.id) load() }, [restaurant?.id])
 
+  useEffect(() => {
+    setMenuMode(restaurant?.menu_mode || 'shared')
+  }, [restaurant?.id, restaurant?.menu_mode])
+
   async function load() {
     setLoading(true)
     const { data: locs } = await supabase
@@ -81,7 +87,6 @@ export default function StorefrontsPage() {
       .eq('restaurant_id', restaurant.id)
       .order('sort_order')
 
-    // Auto-create first storefront if none exist
     if (!locs || locs.length === 0) {
       await supabase.from('locations').insert({
         restaurant_id: restaurant.id,
@@ -99,6 +104,15 @@ export default function StorefrontsPage() {
       setLocations(locs)
     }
     setLoading(false)
+  }
+
+  async function setMenuModeAndSave(newMode) {
+    setSavingMode(true)
+    setMenuMode(newMode)
+    const { error } = await supabase.from('restaurants').update({ menu_mode: newMode }).eq('id', restaurant.id)
+    if (error) toast(error.message, 'error')
+    else toast(`Menu mode set to ${newMode === 'per_location' ? 'per location' : 'shared'}`)
+    setSavingMode(false)
   }
 
   function openAdd() {
@@ -127,7 +141,6 @@ export default function StorefrontsPage() {
     try {
       let locId
       if (isEdit) {
-        console.log('Saving edit for location ID:', editModal?.id)
         await supabase.from('locations').update({ name: form.name, address: form.address }).eq('id', editModal.id)
         locId = editModal.id
         await supabase.from('location_hours').delete().eq('location_id', locId)
@@ -180,6 +193,8 @@ export default function StorefrontsPage() {
 
   if (loading) return <div style={{ padding: 28 }}><Spinner /></div>
 
+  const showMenuModeToggle = locations.length > 1
+
   return (
     <div style={{ padding: '24px 28px 32px' }}>
       <PageHeader
@@ -187,6 +202,39 @@ export default function StorefrontsPage() {
         subtitle="Manage your locations — each with its own hours, links and address"
         action={<Button variant="primary" onClick={openAdd}>+ Add Storefront</Button>}
       />
+
+      {showMenuModeToggle && (
+        <Card style={{ marginBottom: 16, padding: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 4 }}>Menu setup</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5 }}>
+                {menuMode === 'per_location'
+                  ? 'Each location has its own menu. Edit them separately on the Menu page.'
+                  : 'All locations share the same menu.'}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <Button
+                size="sm"
+                variant={menuMode === 'shared' ? 'primary' : 'ghost'}
+                onClick={() => setMenuModeAndSave('shared')}
+                disabled={savingMode}
+              >
+                Shared menu
+              </Button>
+              <Button
+                size="sm"
+                variant={menuMode === 'per_location' ? 'primary' : 'ghost'}
+                onClick={() => setMenuModeAndSave('per_location')}
+                disabled={savingMode}
+              >
+                Per location
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {locations.map((loc, i) => (
