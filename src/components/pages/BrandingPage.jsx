@@ -12,6 +12,7 @@ const TABS = [
   { key: 'private_events', label: 'Private Events' },
   { key: 'announcement',   label: 'Announcement' },
   { key: 'social',         label: 'Social Media' },
+  { key: 'seo',            label: 'SEO' },
   { key: 'domain',         label: 'Domain' },
 ]
 
@@ -67,6 +68,7 @@ export default function BrandingPage() {
       {tab === 'private_events' && <PrivateEventsSection restaurant={restaurant} />}
       {tab === 'announcement'   && <AnnouncementSection restaurant={restaurant} />}
       {tab === 'social'         && <SocialSection restaurant={restaurant} />}
+      {tab === 'seo'            && <SEOSection restaurant={restaurant} />}
       {tab === 'domain'         && <DomainSection restaurant={restaurant} />}
     </div>
   )
@@ -198,7 +200,7 @@ function BrandSection({ restaurant }) {
           <Field label="Events / catering inbox (optional)">
             <input type="email" value={form.events_email} onChange={e => set('events_email', e.target.value)} placeholder="events@restaurant.com" style={inputStyle} {...focusStyle} />
             <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, lineHeight: 1.5 }}>
-              If set, a "Private Events" section appears on your homepage and a "Private Events" tab appears in your nav. The events form sends to this address.
+              If set, a "Private Events" section appears on your homepage and a "Private Events" tab appears in your nav.
             </p>
           </Field>
         </div>
@@ -293,7 +295,7 @@ function LogoSection({ restaurant }) {
   return (
     <>
       <LogoUploader field="logo_url" label="Primary Logo" hint="Shown in the navigation bar and footer." />
-      <LogoUploader field="logo_light_url" label="Light Logo (optional)" hint="Shown over your hero photos. If left blank, we'll auto-generate one from your primary logo." dark />
+      <LogoUploader field="logo_light_url" label="Light Logo (optional)" hint="Shown over your hero photos." dark />
       <SaveBar onSave={save} saving={saving} />
     </>
   )
@@ -383,11 +385,11 @@ const COLLAGE_SLOTS = [
 function CollagesSection({ restaurant, photos, reload }) {
   const [uploadingSlot, setUploadingSlot] = useState(null)
   const photosBySlot = {
-  collage_1: photos.filter(p => p.section === 'collage_1').sort((a, b) => a.sort_order - b.sort_order),
-  collage_2: photos.filter(p => p.section === 'collage_2').sort((a, b) => a.sort_order - b.sort_order),
-  collage_3: photos.filter(p => p.section === 'collage_3').sort((a, b) => a.sort_order - b.sort_order),
-  collage_4: photos.filter(p => p.section === 'collage_4').sort((a, b) => a.sort_order - b.sort_order),
-}
+    collage_1: photos.filter(p => p.section === 'collage_1').sort((a, b) => a.sort_order - b.sort_order),
+    collage_2: photos.filter(p => p.section === 'collage_2').sort((a, b) => a.sort_order - b.sort_order),
+    collage_3: photos.filter(p => p.section === 'collage_3').sort((a, b) => a.sort_order - b.sort_order),
+    collage_4: photos.filter(p => p.section === 'collage_4').sort((a, b) => a.sort_order - b.sort_order),
+  }
 
   async function handleUpload(slotKey, files) {
     if (!files?.length) return
@@ -562,16 +564,15 @@ function PrivateEventsSection({ restaurant }) {
     setSaving(false)
   }
 
-  const eventsEmail = restaurant.events_email
-  const enabled = !!eventsEmail
+  const enabled = !!restaurant.events_email
 
   return (
     <>
-      <Card style={{ marginBottom: 16, background: enabled ? 'transparent' : 'var(--warning-bg)', border: enabled ? undefined : '1px solid #F0C97A' }}>
+      <Card style={{ marginBottom: 16 }}>
         <SectionHeader title="Private Events Section" subtitle="Shown on your homepage when you have an events email set up." />
         {!enabled ? (
           <p style={{ fontSize: 13, color: 'var(--warning)', lineHeight: 1.6, margin: 0 }}>
-            ⚠ This section won't appear on your site yet. To enable it, go to <strong>Branding → Brand</strong> and set your <strong>Events / catering inbox</strong>.
+            ⚠ This section won't appear on your site yet. To enable it, go to Branding → Brand and set your Events / catering inbox.
           </p>
         ) : (
           <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6, margin: 0 }}>
@@ -583,28 +584,11 @@ function PrivateEventsSection({ restaurant }) {
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Section title">
-            <input
-              value={form.title}
-              onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-              placeholder="Private Events & Catering"
-              style={inputStyle}
-              {...focusStyle}
-            />
-            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
-              Default: "Private Events & Catering"
-            </p>
+            <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Private Events & Catering" style={inputStyle} {...focusStyle} />
           </Field>
           <Field label="Body copy">
-            <textarea
-              value={form.body}
-              onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-              placeholder="Office lunches, client meetings, celebrations and holiday gatherings. We host events of all sizes."
-              style={{ ...inputStyle, height: 120, resize: 'vertical', lineHeight: 1.5 }}
-              {...focusStyle}
-            />
-            <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6 }}>
-              The "Inquire About Events" button will always link to your contact form.
-            </p>
+            <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))} placeholder="Office lunches, client meetings, celebrations..."
+              style={{ ...inputStyle, height: 120, resize: 'vertical', lineHeight: 1.5 }} {...focusStyle} />
           </Field>
         </div>
       </Card>
@@ -717,40 +701,152 @@ function SocialSection({ restaurant }) {
   return (
     <>
       <Card style={{ marginBottom: 16 }}>
-        <SectionHeader
-          title="Social Media"
-          subtitle="Icons appear in the footer. Paste a full URL, or just the handle (e.g. @kpskitchen)."
-        />
+        <SectionHeader title="Social Media" subtitle="Icons appear in the footer. Paste a full URL, or just the handle (e.g. @kpskitchen)." />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Instagram">
-            <input
-              value={form.instagram}
-              onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))}
-              placeholder="@yourrestaurant or full URL"
-              style={inputStyle}
-              {...focusStyle}
-            />
+            <input value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} placeholder="@yourrestaurant or full URL" style={inputStyle} {...focusStyle} />
           </Field>
           <Field label="Facebook">
-            <input
-              value={form.facebook}
-              onChange={e => setForm(f => ({ ...f, facebook: e.target.value }))}
-              placeholder="Page name or full URL"
-              style={inputStyle}
-              {...focusStyle}
-            />
+            <input value={form.facebook} onChange={e => setForm(f => ({ ...f, facebook: e.target.value }))} placeholder="Page name or full URL" style={inputStyle} {...focusStyle} />
           </Field>
           <Field label="TikTok (optional)">
-            <input
-              value={form.tiktok}
-              onChange={e => setForm(f => ({ ...f, tiktok: e.target.value }))}
-              placeholder="@yourrestaurant or full URL"
-              style={inputStyle}
-              {...focusStyle}
-            />
+            <input value={form.tiktok} onChange={e => setForm(f => ({ ...f, tiktok: e.target.value }))} placeholder="@yourrestaurant or full URL" style={inputStyle} {...focusStyle} />
           </Field>
         </div>
       </Card>
+      <SaveBar onSave={save} saving={saving} />
+    </>
+  )
+}
+
+/* ─── SEO ───────────────────────────────────────────────────── */
+function SEOSection({ restaurant }) {
+  const [form, setForm] = useState({ favicon_url: '', seo_description: '' })
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+
+  useEffect(() => {
+    setForm({
+      favicon_url: restaurant.favicon_url || '',
+      seo_description: restaurant.seo_description || '',
+    })
+  }, [restaurant.id])
+
+  async function uploadFavicon(file) {
+    if (!file) return
+    setUploading(true)
+    const path = `${restaurant.id}/favicon-${Date.now()}.${file.name.split('.').pop()}`
+    const { error } = await supabase.storage.from('restaurant-photos').upload(path, file, { upsert: true })
+    if (error) { toast('Failed to upload', 'error'); setUploading(false); return }
+    const { data } = supabase.storage.from('restaurant-photos').getPublicUrl(path)
+    setForm(f => ({ ...f, favicon_url: data.publicUrl }))
+    setUploading(false)
+    toast('Favicon uploaded — remember to save')
+  }
+
+  async function save() {
+    setSaving(true)
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        favicon_url: form.favicon_url || null,
+        seo_description: form.seo_description || null,
+      })
+      .eq('id', restaurant.id)
+    if (error) toast(error.message, 'error')
+    else toast('SEO settings saved')
+    setSaving(false)
+  }
+
+  // Compute what description will actually show (preview)
+  const previewDescription = form.seo_description ||
+    (restaurant.about
+      ? (restaurant.about.length > 155 ? restaurant.about.slice(0, 155).trim() + '…' : restaurant.about)
+      : `Visit ${restaurant.name || 'us'}`)
+
+  const charCount = form.seo_description.length
+  const overLimit = charCount > 160
+
+  return (
+    <>
+      <Card style={{ marginBottom: 16 }}>
+        <SectionHeader
+          title="Favicon"
+          subtitle="The little icon in the browser tab. Use a square image (e.g., 256×256 PNG) — your logo cropped to a square works well."
+        />
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+          <div style={{
+            width: 96, height: 96, background: 'var(--bg)', border: '1px solid var(--border)',
+            borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, overflow: 'hidden',
+          }}>
+            {form.favicon_url ? (
+              <img src={form.favicon_url} alt="favicon preview" style={{ maxWidth: '85%', maxHeight: '85%', objectFit: 'contain' }} />
+            ) : (
+              <span style={{ fontSize: 24, color: 'var(--subtle)' }}>🌐</span>
+            )}
+          </div>
+          <div style={{ flex: 1 }}>
+            <DropZone onFiles={files => uploadFavicon(files[0])} multiple={false} disabled={uploading}>
+              <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>
+                {uploading ? 'Uploading…' : (form.favicon_url ? 'Drop a new favicon or click to replace' : 'Drop favicon or click to upload')}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--muted)' }}>Square PNG works best — typically 256×256 or 512×512</div>
+            </DropZone>
+            {form.favicon_url && (
+              <button onClick={() => setForm(f => ({ ...f, favicon_url: '' }))}
+                style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0 }}>
+                Remove favicon
+              </button>
+            )}
+            {!form.favicon_url && restaurant.logo_url && (
+              <p style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, lineHeight: 1.5 }}>
+                If you don't upload a favicon, your primary logo will be used. (It may look stretched at small sizes — a square favicon is recommended.)
+              </p>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <Card style={{ marginBottom: 16 }}>
+        <SectionHeader
+          title="Meta Description"
+          subtitle="The short blurb shown under your link in Google search results. Around 150 characters."
+        />
+        <Field label="Description">
+          <textarea
+            value={form.seo_description}
+            onChange={e => setForm(f => ({ ...f, seo_description: e.target.value }))}
+            placeholder={restaurant.about ? '(Will use your About paragraph if left blank)' : `Visit ${restaurant.name || 'our restaurant'}`}
+            style={{ ...inputStyle, height: 90, resize: 'vertical', lineHeight: 1.5 }}
+            {...focusStyle}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            <p style={{ fontSize: 11, color: 'var(--muted)', margin: 0, lineHeight: 1.5 }}>
+              {form.seo_description ? '' : 'Leave blank to auto-use your About paragraph (truncated to 155 chars).'}
+            </p>
+            <span style={{ fontSize: 11, color: overLimit ? 'var(--danger)' : 'var(--muted)' }}>
+              {charCount}/160
+            </span>
+          </div>
+        </Field>
+
+        <div style={{ marginTop: 20, padding: 16, background: 'var(--bg)', borderRadius: 8, border: '1px solid var(--border)' }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', marginBottom: 10, letterSpacing: '1px', textTransform: 'uppercase' }}>
+            Preview — How it'll look in Google
+          </div>
+          <div style={{ fontSize: 16, color: '#1a0dab', marginBottom: 4, fontWeight: 400 }}>
+            {restaurant.tagline ? `${restaurant.name || 'Restaurant Name'} | ${restaurant.tagline}` : (restaurant.name || 'Restaurant Name')}
+          </div>
+          <div style={{ fontSize: 12, color: '#006621', marginBottom: 4 }}>
+            {restaurant.custom_domain || 'yourdomain.com'}
+          </div>
+          <div style={{ fontSize: 13, color: '#545454', lineHeight: 1.5 }}>
+            {previewDescription}
+          </div>
+        </div>
+      </Card>
+
       <SaveBar onSave={save} saving={saving} />
     </>
   )
