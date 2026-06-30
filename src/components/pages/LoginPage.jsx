@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { Logo } from '../ui'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -31,11 +32,9 @@ export default function LoginPage() {
       background: 'var(--bg)', padding: 24
     }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontFamily: 'Playfair Display, serif', fontSize: 28, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-            EC Web Co
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--muted)' }}>Restaurant Manager</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 40 }}>
+          <Logo size={34} />
+          <div style={{ fontSize: 14, color: 'var(--muted)', marginTop: 14 }}>website manager</div>
         </div>
 
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '32px 28px' }}>

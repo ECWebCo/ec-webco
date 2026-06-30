@@ -151,7 +151,7 @@ export default function AdminPage() {
       </div>
 
       <Card style={{ padding: 0, overflow: 'visible' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto', gap: 16, padding: '12px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderRadius: 'var(--radius) var(--radius) 0 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr 1fr 1fr auto', gap: 16, padding: '12px 20px', background: 'var(--inset)', borderBottom: '1px solid var(--border)', fontSize: 11, fontWeight: 500, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderRadius: 'var(--radius) var(--radius) 0 0' }}>
           <div>Restaurant</div>
           <div>Slug</div>
           <div>Status</div>

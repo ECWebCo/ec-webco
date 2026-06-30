@@ -247,7 +247,7 @@ export default function MenuPage() {
       </DndContext>
 
       {/* AI Menu Import Banner */}
-      <div style={{ background: 'var(--gold-light)', border: '1px solid #E8D49A', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 20 }}>
+      <div style={{ background: 'var(--gold-light)', border: '1px solid var(--accent-line)', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showAI ? 12 : 0 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--gold-dark)' }}>✦ AI Menu Import</div>
@@ -263,7 +263,7 @@ export default function MenuPage() {
           <div style={{ marginTop: 12 }}>
             <textarea value={menuText} onChange={e => setMenuText(e.target.value)}
               placeholder="Paste menu text here — from their website, a photo, Google listing, anything..."
-              style={{ ...inputStyle, width: '100%', height: 140, resize: 'vertical', lineHeight: 1.5, background: '#fff' }} />
+              style={{ ...inputStyle, width: '100%', height: 140, resize: 'vertical', lineHeight: 1.5, background: 'var(--bg)' }} />
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
               <Button variant="primary" onClick={parseMenu} disabled={!menuText.trim() || parsing}>
                 {parsing ? 'Parsing...' : '✦ Parse with AI'}
@@ -319,7 +319,7 @@ function SortableSection({ section, items, onEditSection, onDeleteSection, onAdd
 
   return (
     <div ref={setNodeRef} style={{ ...style, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', marginBottom: 16, overflow: 'hidden' }}>
-      <div style={{ padding: '13px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FAFAF8', borderBottom: '1px solid var(--border)' }}>
+      <div style={{ padding: '13px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--inset)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span {...attributes} {...listeners} style={{ color: 'var(--subtle)', cursor: 'grab', fontSize: 16, userSelect: 'none' }}>⠿</span>
           <span style={{ fontSize: 15, fontWeight: 500 }}>{section.name}</span>

@@ -1,13 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
-
-function Logo() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 32 }}>
-      <img src="/ec-logo.png" alt="EC Web Co" style={{ height: 36, flexShrink: 0 }} />
-    </div>
-  )
-}
+import { Logo } from '../ui'
 
 export default function SetupPage() {
   const params = new URLSearchParams(window.location.search)
@@ -45,7 +38,7 @@ export default function SetupPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', padding: 16 }}>
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 40, width: '100%', maxWidth: 380 }}>
-        <Logo />
+        <div style={{ marginBottom: 32 }}><Logo size={32} /></div>
 
         {sent ? (
           <div style={{ textAlign: 'center', padding: '8px 0' }}>

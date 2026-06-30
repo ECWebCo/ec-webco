@@ -111,7 +111,7 @@ export default function DashboardPage() {
       </Card>
 
       {/* Request banner */}
-      <div style={{ background: 'var(--gold-light)', border: '1px solid #E8D49A', borderRadius: 'var(--radius)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+      <div style={{ background: 'var(--gold-light)', border: '1px solid var(--accent-line)', borderRadius: 'var(--radius)', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
         <div style={{ fontSize: 14, color: 'var(--gold-dark)' }}>
           <strong>Need a bigger change?</strong> Want new pages, a design update, or something custom? Let us know.
         </div>

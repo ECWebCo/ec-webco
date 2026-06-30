@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
-import { ToastContainer, Modal, Button, Field, inputStyle } from '../ui'
+import { ToastContainer, Modal, Button, Field, inputStyle, Logo } from '../ui'
 
 const NAV = [
   { to: '/',            label: 'Dashboard',  icon: IconDashboard, end: true },
@@ -89,21 +89,8 @@ export default function DashboardLayout() {
         }}
       >
         <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div
-              style={{
-                width: 36, height: 36, background: 'var(--gold)', borderRadius: 8,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: 13, color: '#fff', flexShrink: 0,
-              }}
-            >
-              EC
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>EC Web Co</div>
-              <div style={{ fontSize: 11, color: 'var(--muted)' }}>Website Manager</div>
-            </div>
-          </div>
+          <Logo size={24} />
+          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 6, paddingLeft: 2 }}>website manager</div>
         </div>
 
         <nav style={{ padding: '14px 10px', flex: 1 }}>
@@ -148,7 +135,7 @@ export default function DashboardLayout() {
             onClick={() => setRequestOpen(true)}
             style={{
               width: '100%', padding: '9px 12px', background: 'var(--gold-light)',
-              border: '1px solid #E8D49A', borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--accent-line)', borderRadius: 'var(--radius-sm)',
               color: 'var(--gold-dark)', fontSize: 13, fontWeight: 500,
               cursor: 'pointer', fontFamily: 'inherit', marginBottom: 10, textAlign: 'left',
             }}

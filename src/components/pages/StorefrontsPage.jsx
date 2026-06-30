@@ -239,7 +239,7 @@ export default function StorefrontsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {locations.map((loc, i) => (
           <Card key={loc.id} style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 20px', background: '#FAFAF8', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ padding: '14px 20px', background: 'var(--inset)', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontSize: 15, fontWeight: 500 }}>{loc.name || `Storefront ${i + 1}`}</div>
                 {loc.address && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{loc.address}</div>}

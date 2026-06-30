@@ -1,5 +1,22 @@
 import { useState, useEffect } from 'react'
 
+/* ── Logo (matches the marketing site mark: cream "E" + red "C" arc) ── */
+export function Logo({ size = 28, showText = true, textColor = 'var(--text)' }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+      <svg height={size} viewBox="0 0 128 96" role="img" aria-label="EC Web Co logo" style={{ display: 'block', flexShrink: 0 }}>
+        <path fill={textColor} d="M14 14h18v68h-18zM14 14h44v17h-44zM14 39.5h36v17h-36zM14 65h44v17h-44z" />
+        <path fill="none" stroke="var(--gold)" strokeWidth="18" d="M96.8 67.4A27 27 0 1 1 96.8 28.6" />
+      </svg>
+      {showText && (
+        <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: Math.round(size * 0.6), letterSpacing: '-0.02em', color: textColor }}>
+          EC Web Co
+        </span>
+      )}
+    </span>
+  )
+}
+
 /* ── Button ── */
 export function Button({ children, variant = 'ghost', size = 'md', onClick, disabled, style, type = 'button' }) {
   const base = {
@@ -124,8 +141,8 @@ export function PageHeader({ title, subtitle, action }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, gap: 16 }}>
       <div>
-        <h1 style={{ fontSize: 20, fontWeight: 600 }}>{title}</h1>
-        {subtitle && <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 3 }}>{subtitle}</p>}
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, letterSpacing: '-0.02em', textTransform: 'lowercase' }}>{title}</h1>
+        {subtitle && <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{subtitle}</p>}
       </div>
       {action}
     </div>
